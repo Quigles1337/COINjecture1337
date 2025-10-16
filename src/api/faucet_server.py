@@ -19,9 +19,15 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 try:
     from api.cache_manager import CacheManager
+    from api.schema import TelemetryEvent, BlockEvent
+    from api.ingest_store import IngestStore
+    from api.auth import HMACAuth
 except ImportError:
     # Fallback for direct execution
     from cache_manager import CacheManager
+    from schema import TelemetryEvent, BlockEvent
+    from ingest_store import IngestStore
+    from auth import HMACAuth
 
 
 class FaucetAPI:
@@ -40,6 +46,9 @@ class FaucetAPI:
         """
         self.app = Flask(__name__)
         self.cache_manager = CacheManager(cache_dir)
+        self.ingest_store = IngestStore()
+        # TODO: load from env or config
+        self.auth = HMACAuth(secret=os.environ.get("FAUCET_HMAC_SECRET", "dev-secret"))
         
         # Enable CORS for browser access
         CORS(self.app)
@@ -87,6 +96,70 @@ class FaucetAPI:
                     "error": "Cache unavailable",
                     "message": str(e)
                 }), 503
+
+        # Ingest: Telemetry
+        @self.app.route('/v1/ingest/telemetry', methods=['POST'])
+        @self.limiter.limit("10 per minute")
+        def ingest_telemetry():
+            try:
+                headers = request.headers
+                sig = headers.get("X-Signature", "")
+                ts_hdr = headers.get("X-Timestamp", "0")
+                payload = request.get_json(force=True, silent=False) or {}
+                ev = TelemetryEvent.from_json(payload)
+                if not self.auth.verify(payload, sig, ts_hdr):
+                    return jsonify({"status": "error", "error": "UNAUTHORIZED"}), 401
+                ok = self.ingest_store.insert_telemetry(payload)
+                if not ok:
+                    return jsonify({"status": "error", "error": "DUPLICATE"}), 409
+                return jsonify({"status": "accepted"}), 202
+            except ValueError as ve:
+                return jsonify({"status": "error", "error": "INVALID", "message": str(ve)}), 422
+            except Exception as e:
+                return jsonify({"status": "error", "error": "INTERNAL", "message": str(e)}), 500
+
+        # Ingest: Block events
+        @self.app.route('/v1/ingest/block', methods=['POST'])
+        @self.limiter.limit("10 per minute")
+        def ingest_block():
+            try:
+                headers = request.headers
+                sig = headers.get("X-Signature", "")
+                ts_hdr = headers.get("X-Timestamp", "0")
+                payload = request.get_json(force=True, silent=False) or {}
+                ev = BlockEvent.from_json(payload)
+                if not self.auth.verify(payload, sig, ts_hdr):
+                    return jsonify({"status": "error", "error": "UNAUTHORIZED"}), 401
+                ok = self.ingest_store.insert_block_event(payload)
+                if not ok:
+                    return jsonify({"status": "error", "error": "DUPLICATE"}), 409
+                return jsonify({"status": "accepted"}), 202
+            except ValueError as ve:
+                return jsonify({"status": "error", "error": "INVALID", "message": str(ve)}), 422
+            except Exception as e:
+                return jsonify({"status": "error", "error": "INTERNAL", "message": str(e)}), 500
+
+        # Display: latest telemetry
+        @self.app.route('/v1/display/telemetry/latest', methods=['GET'])
+        @self.limiter.limit("100 per minute")
+        def display_latest_telemetry():
+            try:
+                limit = request.args.get('limit', default=20, type=int)
+                data = self.ingest_store.latest_telemetry(limit=limit)
+                return jsonify({"status": "success", "data": data})
+            except Exception as e:
+                return jsonify({"status": "error", "error": "INTERNAL", "message": str(e)}), 500
+
+        # Display: latest blocks
+        @self.app.route('/v1/display/blocks/latest', methods=['GET'])
+        @self.limiter.limit("100 per minute")
+        def display_latest_blocks():
+            try:
+                limit = request.args.get('limit', default=20, type=int)
+                data = self.ingest_store.latest_blocks(limit=limit)
+                return jsonify({"status": "success", "data": data})
+            except Exception as e:
+                return jsonify({"status": "error", "error": "INTERNAL", "message": str(e)}), 500
         
         @self.app.route('/v1/data/block/<int:index>', methods=['GET'])
         @self.limiter.limit("100 per minute")

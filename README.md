@@ -1,6 +1,6 @@
 # COINjecture: Utility-Based Computational Work Blockchain
 
-> Built on Satoshi's foundation. Evolved with complexity theory. Driven by real-world utility.
+> Built on Satoshi's foundation. Evolved with complexity theory. Driven by real-world utility. Every pro
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/beanapologist/COINjecture)

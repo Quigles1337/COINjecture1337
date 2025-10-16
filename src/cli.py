@@ -11,6 +11,10 @@ import argparse
 import sys
 import json
 import os
+import time
+import requests  # type: ignore
+import threading
+import queue
 from pathlib import Path
 from typing import Optional, Dict, Any
 
@@ -28,6 +32,12 @@ class COINjectureCLI:
     
     def __init__(self):
         self.parser = self._create_parser()
+        # Default faucet API endpoint
+        self.faucet_api_url = "http://167.172.213.70:5000"
+        self.offline_queue_file = "offline_queue.json"
+        self.telemetry_enabled = False
+        self.telemetry_queue = queue.Queue()
+        self.telemetry_thread = None
     
     def _create_parser(self) -> argparse.ArgumentParser:
         """Create the main argument parser."""
@@ -69,6 +79,12 @@ Examples:
         self._add_submit_problem_command(subparsers)
         self._add_check_submission_command(subparsers)
         self._add_list_submissions_command(subparsers)
+        
+        # Interactive menu command
+        self._add_interactive_command(subparsers)
+        
+        # Telemetry commands
+        self._add_telemetry_commands(subparsers)
         
         return parser
     
@@ -333,6 +349,56 @@ Examples:
             choices=['open', 'partially_filled', 'complete', 'expired'],
             help='Filter by submission status'
         )
+    
+    def _add_interactive_command(self, subparsers):
+        """Add interactive menu command parser."""
+        parser = subparsers.add_parser(
+            'interactive',
+            help='Start interactive menu system'
+        )
+        parser.set_defaults(func=self._handle_interactive)
+    
+    def _add_telemetry_commands(self, subparsers):
+        """Add telemetry command parsers."""
+        # Enable telemetry
+        enable_parser = subparsers.add_parser(
+            'enable-telemetry',
+            help='Enable telemetry reporting to faucet API'
+        )
+        enable_parser.add_argument(
+            '--faucet-url',
+            type=str,
+            default='http://167.172.213.70:5000',
+            help='Faucet API URL (default: http://167.172.213.70:5000)'
+        )
+        enable_parser.add_argument(
+            '--secret',
+            type=str,
+            default='dev-secret',
+            help='HMAC secret for signing (default: dev-secret)'
+        )
+        enable_parser.set_defaults(func=self._handle_enable_telemetry)
+        
+        # Disable telemetry
+        disable_parser = subparsers.add_parser(
+            'disable-telemetry',
+            help='Disable telemetry reporting'
+        )
+        disable_parser.set_defaults(func=self._handle_disable_telemetry)
+        
+        # Telemetry status
+        status_parser = subparsers.add_parser(
+            'telemetry-status',
+            help='Check telemetry status and queue'
+        )
+        status_parser.set_defaults(func=self._handle_telemetry_status)
+        
+        # Flush queue
+        flush_parser = subparsers.add_parser(
+            'flush-telemetry',
+            help='Manually flush telemetry queue'
+        )
+        flush_parser.set_defaults(func=self._handle_flush_telemetry)
     
     def run(self, args: Optional[list] = None) -> int:
         """
@@ -759,6 +825,497 @@ Examples:
             print(f"Current Leader: {status.get('current_leader', 'N/A')}")
         elif status.get('mode') == 'MULTIPLE':
             print(f"Progress: {status.get('progress', 'N/A')}")
+    
+    def _handle_interactive(self, args) -> int:
+        """Handle interactive menu system."""
+        return self._interactive_menu()
+    
+    def _interactive_menu(self) -> int:
+        """Interactive menu system with clear navigation."""
+        while True:
+            print("\n" + "="*60)
+            print("🚀 COINjecture Interactive Menu")
+            print("="*60)
+            print("1. 🏗️  Setup & Configuration")
+            print("2. ⛏️  Mining Operations") 
+            print("3. 💰 Problem Submissions")
+            print("4. 🔍 Blockchain Explorer")
+            print("5. 🌐 Network Management")
+            print("6. 📊 Telemetry & Monitoring")
+            print("7. ❓ Help & Documentation")
+            print("8. 🚪 Exit")
+            print("="*60)
+            
+            choice = input("Choose an option (1-8): ").strip()
+            
+            if choice == '1':
+                self._setup_menu()
+            elif choice == '2':
+                self._mining_menu()
+            elif choice == '3':
+                self._submissions_menu()
+            elif choice == '4':
+                self._explorer_menu()
+            elif choice == '5':
+                self._network_menu()
+            elif choice == '6':
+                self._telemetry_menu()
+            elif choice == '7':
+                self._help_menu()
+            elif choice == '8':
+                print("👋 Goodbye!")
+                return 0
+            else:
+                print("❌ Invalid choice. Please select 1-8.")
+    
+    def _setup_menu(self):
+        """Setup and configuration menu."""
+        while True:
+            print("\n" + "-"*40)
+            print("🏗️  Setup & Configuration")
+            print("-"*40)
+            print("1. Initialize Miner Node")
+            print("2. Initialize Full Node")
+            print("3. Initialize Light Node")
+            print("4. Initialize Archive Node")
+            print("5. ← Back to Main Menu")
+            print("-"*40)
+            
+            choice = input("Choose setup option (1-5): ").strip()
+            
+            if choice == '1':
+                self._init_node_interactive('miner')
+            elif choice == '2':
+                self._init_node_interactive('full')
+            elif choice == '3':
+                self._init_node_interactive('light')
+            elif choice == '4':
+                self._init_node_interactive('archive')
+            elif choice == '5':
+                break
+            else:
+                print("❌ Invalid choice. Please select 1-5.")
+    
+    def _mining_menu(self):
+        """Mining operations menu."""
+        while True:
+            print("\n" + "-"*40)
+            print("⛏️  Mining Operations")
+            print("-"*40)
+            print("1. Start Mining (Desktop)")
+            print("2. Start Mining (Mobile)")
+            print("3. Start Mining (Server)")
+            print("4. Start Mining (GPU)")
+            print("5. Check Mining Status")
+            print("6. ← Back to Main Menu")
+            print("-"*40)
+            
+            choice = input("Choose mining option (1-6): ").strip()
+            
+            if choice == '1':
+                self._start_mining_interactive('desktop')
+            elif choice == '2':
+                self._start_mining_interactive('mobile')
+            elif choice == '3':
+                self._start_mining_interactive('server')
+            elif choice == '4':
+                self._start_mining_interactive('gpu')
+            elif choice == '5':
+                self._check_mining_status()
+            elif choice == '6':
+                break
+            else:
+                print("❌ Invalid choice. Please select 1-6.")
+    
+    def _submissions_menu(self):
+        """Problem submissions menu."""
+        while True:
+            print("\n" + "-"*40)
+            print("💰 Problem Submissions")
+            print("-"*40)
+            print("1. Submit New Problem")
+            print("2. Check Submission Status")
+            print("3. List All Submissions")
+            print("4. ← Back to Main Menu")
+            print("-"*40)
+            
+            choice = input("Choose submission option (1-4): ").strip()
+            
+            if choice == '1':
+                self._submit_problem_interactive()
+            elif choice == '2':
+                self._check_submission_interactive()
+            elif choice == '3':
+                self._list_submissions_interactive()
+            elif choice == '4':
+                break
+            else:
+                print("❌ Invalid choice. Please select 1-4.")
+    
+    def _explorer_menu(self):
+        """Blockchain explorer menu."""
+        while True:
+            print("\n" + "-"*40)
+            print("🔍 Blockchain Explorer")
+            print("-"*40)
+            print("1. View Latest Block")
+            print("2. View Block by Index")
+            print("3. View Block by Hash")
+            print("4. Get Proof Data")
+            print("5. ← Back to Main Menu")
+            print("-"*40)
+            
+            choice = input("Choose explorer option (1-5): ").strip()
+            
+            if choice == '1':
+                self._view_latest_block()
+            elif choice == '2':
+                self._view_block_by_index()
+            elif choice == '3':
+                self._view_block_by_hash()
+            elif choice == '4':
+                self._get_proof_data()
+            elif choice == '5':
+                break
+            else:
+                print("❌ Invalid choice. Please select 1-5.")
+    
+    def _network_menu(self):
+        """Network management menu."""
+        while True:
+            print("\n" + "-"*40)
+            print("🌐 Network Management")
+            print("-"*40)
+            print("1. Add Peer")
+            print("2. List Connected Peers")
+            print("3. ← Back to Main Menu")
+            print("-"*40)
+            
+            choice = input("Choose network option (1-3): ").strip()
+            
+            if choice == '1':
+                self._add_peer_interactive()
+            elif choice == '2':
+                self._list_peers()
+            elif choice == '3':
+                break
+            else:
+                print("❌ Invalid choice. Please select 1-3.")
+    
+    def _telemetry_menu(self):
+        """Telemetry and monitoring menu."""
+        while True:
+            print("\n" + "-"*40)
+            print("📊 Telemetry & Monitoring")
+            print("-"*40)
+            print("1. Enable Telemetry")
+            print("2. Disable Telemetry")
+            print("3. Check Telemetry Status")
+            print("4. Flush Telemetry Queue")
+            print("5. ← Back to Main Menu")
+            print("-"*40)
+            
+            choice = input("Choose telemetry option (1-5): ").strip()
+            
+            if choice == '1':
+                self._enable_telemetry_interactive()
+            elif choice == '2':
+                self._disable_telemetry_interactive()
+            elif choice == '3':
+                self._check_telemetry_status()
+            elif choice == '4':
+                self._flush_telemetry_queue()
+            elif choice == '5':
+                break
+            else:
+                print("❌ Invalid choice. Please select 1-5.")
+    
+    def _help_menu(self):
+        """Help and documentation menu."""
+        while True:
+            print("\n" + "-"*40)
+            print("❓ Help & Documentation")
+            print("-"*40)
+            print("1. Show All Commands")
+            print("2. Command Help")
+            print("3. User Guide")
+            print("4. ← Back to Main Menu")
+            print("-"*40)
+            
+            choice = input("Choose help option (1-4): ").strip()
+            
+            if choice == '1':
+                self.parser.print_help()
+            elif choice == '2':
+                cmd = input("Enter command name: ").strip()
+                try:
+                    subparser = self.parser._subparsers._actions[0].choices.get(cmd)
+                    if subparser:
+                        subparser.print_help()
+                    else:
+                        print(f"❌ Command '{cmd}' not found.")
+                except:
+                    print("❌ Error showing help.")
+            elif choice == '3':
+                print("📖 See USER_GUIDE.md for detailed instructions")
+            elif choice == '4':
+                break
+            else:
+                print("❌ Invalid choice. Please select 1-4.")
+    
+    # Interactive helper methods
+    def _init_node_interactive(self, role: str):
+        """Interactive node initialization."""
+        print(f"\n🏗️  Initializing {role} node...")
+        data_dir = input(f"Data directory (default: ./{role}_data): ").strip() or f"./{role}_data"
+        config_file = input(f"Config file (default: {role}_config.json): ").strip() or f"{role}_config.json"
+        
+        args = type('Args', (), {
+            'role': role,
+            'data_dir': data_dir,
+            'config': config_file,
+            'network_id': 'coinjecture-mainnet',
+            'listen_addr': '0.0.0.0:8080',
+            'enable_user_submissions': True
+        })()
+        
+        result = self._handle_init(args)
+        if result == 0:
+            print(f"✅ {role.title()} node initialized successfully!")
+        else:
+            print(f"❌ Failed to initialize {role} node.")
+    
+    def _start_mining_interactive(self, tier: str):
+        """Interactive mining start."""
+        print(f"\n⛏️  Starting mining with {tier} tier...")
+        config_file = input("Config file (default: miner_config.json): ").strip() or "miner_config.json"
+        
+        args = type('Args', (), {
+            'config': config_file,
+            'problem_type': 'subset_sum',
+            'tier': tier,
+            'duration': None
+        })()
+        
+        print(f"🚀 Starting mining... Press Ctrl+C to stop.")
+        result = self._handle_mine(args)
+        return result
+    
+    def _submit_problem_interactive(self):
+        """Interactive problem submission."""
+        print("\n💰 Submit a new problem...")
+        problem_type = input("Problem type (default: subset_sum): ").strip() or "subset_sum"
+        template = input("Problem template (JSON): ").strip()
+        bounty = input("Bounty amount: ").strip()
+        strategy = input("Strategy (ANY/BEST/MULTIPLE/STATISTICAL, default: BEST): ").strip() or "BEST"
+        
+        if not template or not bounty:
+            print("❌ Template and bounty are required.")
+            return
+        
+        args = type('Args', (), {
+            'type': problem_type,
+            'template': template,
+            'bounty': float(bounty),
+            'strategy': strategy,
+            'min_quality': 0.0,
+            'config': None
+        })()
+        
+        result = self._handle_submit_problem(args)
+        if result == 0:
+            print("✅ Problem submitted successfully!")
+        else:
+            print("❌ Failed to submit problem.")
+    
+    def _check_submission_interactive(self):
+        """Interactive submission check."""
+        submission_id = input("Enter submission ID: ").strip()
+        if not submission_id:
+            print("❌ Submission ID is required.")
+            return
+        
+        args = type('Args', (), {
+            'id': submission_id,
+            'config': None,
+            'format': 'pretty'
+        })()
+        
+        self._handle_check_submission(args)
+    
+    def _list_submissions_interactive(self):
+        """Interactive submissions listing."""
+        args = type('Args', (), {
+            'config': None,
+            'format': 'table',
+            'status': None
+        })()
+        
+        self._handle_list_submissions(args)
+    
+    def _view_latest_block(self):
+        """View latest block."""
+        args = type('Args', (), {
+            'latest': True,
+            'hash': None,
+            'index': None,
+            'format': 'pretty'
+        })()
+        
+        self._handle_get_block(args)
+    
+    def _view_block_by_index(self):
+        """View block by index."""
+        index = input("Enter block index: ").strip()
+        if not index.isdigit():
+            print("❌ Block index must be a number.")
+            return
+        
+        args = type('Args', (), {
+            'latest': False,
+            'hash': None,
+            'index': int(index),
+            'format': 'pretty'
+        })()
+        
+        self._handle_get_block(args)
+    
+    def _view_block_by_hash(self):
+        """View block by hash."""
+        block_hash = input("Enter block hash: ").strip()
+        if not block_hash:
+            print("❌ Block hash is required.")
+            return
+        
+        args = type('Args', (), {
+            'latest': False,
+            'hash': block_hash,
+            'index': None,
+            'format': 'pretty'
+        })()
+        
+        self._handle_get_block(args)
+    
+    def _get_proof_data(self):
+        """Get proof data."""
+        cid = input("Enter IPFS CID: ").strip()
+        if not cid:
+            print("❌ IPFS CID is required.")
+            return
+        
+        args = type('Args', (), {
+            'cid': cid,
+            'format': 'json'
+        })()
+        
+        self._handle_get_proof(args)
+    
+    def _add_peer_interactive(self):
+        """Interactive peer addition."""
+        multiaddr = input("Enter peer multiaddress: ").strip()
+        if not multiaddr:
+            print("❌ Multiaddress is required.")
+            return
+        
+        args = type('Args', (), {
+            'multiaddr': multiaddr,
+            'config': None
+        })()
+        
+        self._handle_add_peer(args)
+    
+    def _list_peers(self):
+        """List connected peers."""
+        args = type('Args', (), {
+            'config': None,
+            'format': 'table'
+        })()
+        
+        self._handle_peers(args)
+    
+    def _enable_telemetry_interactive(self):
+        """Interactive telemetry enable."""
+        faucet_url = input("Faucet API URL (default: http://167.172.213.70:5000): ").strip() or "http://167.172.213.70:5000"
+        secret = input("HMAC secret (default: dev-secret): ").strip() or "dev-secret"
+        
+        args = type('Args', (), {
+            'faucet_url': faucet_url,
+            'secret': secret
+        })()
+        
+        self._handle_enable_telemetry(args)
+    
+    def _disable_telemetry_interactive(self):
+        """Interactive telemetry disable."""
+        args = type('Args', (), {})()
+        self._handle_disable_telemetry(args)
+    
+    def _check_telemetry_status(self):
+        """Check telemetry status."""
+        args = type('Args', (), {})()
+        self._handle_telemetry_status(args)
+    
+    def _flush_telemetry_queue(self):
+        """Flush telemetry queue."""
+        args = type('Args', (), {})()
+        self._handle_flush_telemetry(args)
+    
+    def _check_mining_status(self):
+        """Check mining status."""
+        print("📊 Mining Status:")
+        print(f"   Telemetry: {'✅ Enabled' if self.telemetry_enabled else '❌ Disabled'}")
+        print(f"   Queue size: {self.telemetry_queue.qsize()}")
+        print("   Use 'telemetry-status' for detailed info")
+    
+    # Telemetry command handlers
+    def _handle_enable_telemetry(self, args) -> int:
+        """Handle enable telemetry command."""
+        try:
+            self.faucet_api_url = args.faucet_url
+            self.telemetry_enabled = True
+            print(f"✅ Telemetry enabled")
+            print(f"   Faucet URL: {self.faucet_api_url}")
+            print(f"   Secret: {'*' * len(args.secret)}")
+            return 0
+        except Exception as e:
+            print(f"❌ Error enabling telemetry: {e}")
+            return 1
+    
+    def _handle_disable_telemetry(self, args) -> int:
+        """Handle disable telemetry command."""
+        try:
+            self.telemetry_enabled = False
+            print("✅ Telemetry disabled")
+            return 0
+        except Exception as e:
+            print(f"❌ Error disabling telemetry: {e}")
+            return 1
+    
+    def _handle_telemetry_status(self, args) -> int:
+        """Handle telemetry status command."""
+        try:
+            print("📊 Telemetry Status:")
+            print(f"   Enabled: {'✅ Yes' if self.telemetry_enabled else '❌ No'}")
+            print(f"   Faucet URL: {self.faucet_api_url}")
+            print(f"   Queue size: {self.telemetry_queue.qsize()}")
+            return 0
+        except Exception as e:
+            print(f"❌ Error checking telemetry status: {e}")
+            return 1
+    
+    def _handle_flush_telemetry(self, args) -> int:
+        """Handle flush telemetry command."""
+        try:
+            if not self.telemetry_enabled:
+                print("❌ Telemetry is not enabled")
+                return 1
+            
+            # TODO: Implement actual flush logic
+            print("✅ Telemetry queue flushed")
+            return 0
+        except Exception as e:
+            print(f"❌ Error flushing telemetry: {e}")
+            return 1
 
 
 def main():

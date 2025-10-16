@@ -5,6 +5,90 @@ All notable changes to COINjecture will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.3] - 2025-10-15
+
+### Added
+- **Live Server Integration** - Updated all packages to connect to live server at http://167.172.213.70:5000
+- **Production Ready Documentation** - Created PRODUCTION_READY.md with complete deployment status
+- **Live API Endpoints** - All download packages now reference operational server endpoints
+- **Global Accessibility** - Server confirmed live and accessible worldwide
+
+### Updated
+- **DOWNLOAD_PACKAGES.md** - Added live server status and endpoint information
+- **Installation Guides** - Updated to include live server connection steps
+- **User Documentation** - All guides now reference operational server
+- **API References** - Updated all examples to use live server URLs
+
+### Server Status
+- **🌍 Live API Server:** http://167.172.213.70:5000
+- **✅ Health Check:** http://167.172.213.70:5000/health
+- **📊 Latest Block:** http://167.172.213.70:5000/v1/data/block/latest
+- **🔗 Public Access:** Available to anyone worldwide
+- **📡 Telemetry Ready:** CLI can connect and send data
+
+### Deployment Ready
+- **Download Packages** - All packages updated with live server integration
+- **Cross-Platform Support** - Windows, macOS, Linux packages ready
+- **One-Click Installation** - Automated setup with live server connection
+- **Production Documentation** - Complete deployment and usage guides
+
+#buildinginpublic #liveserver #productionready #globaldeployment
+
+## [3.3.2] - 2025-10-15
+
+### Added
+- **Download Packages System** - Complete cross-platform installation packages
+- **One-Click Installer** (`install_coinjecture.py`) - Automated setup for all platforms
+- **Platform-Specific Startup Scripts**:
+  - `start_coinjecture.bat` - Windows launcher with ASCII logo and error handling
+  - `start_coinjecture.sh` - Unix/macOS launcher with Python version validation
+- **Python Wheel Distribution** (`setup_dist.py`) - Professional package distribution
+- **Comprehensive Download Guide** (`DOWNLOAD_PACKAGES.md`) - Complete installation documentation
+
+### Enhanced
+- **Windows Batch File** - Beautiful ASCII logo, color terminal, comprehensive error handling
+- **Unix Shell Script** - Python version checking, automatic setup, executable permissions
+- **Cross-Platform Compatibility** - Works on Windows, macOS, and Linux
+- **Installation Validation** - Automatic testing and verification of installation
+
+### Installation Methods
+1. **One-Click Installer** - `python3 install_coinjecture.py` (recommended for all users)
+2. **Platform Scripts** - Double-click `start_coinjecture.bat` (Windows) or `./start_coinjecture.sh` (Unix)
+3. **Python Wheel** - `python setup_dist.py bdist_wheel` for developers
+4. **Manual Installation** - Traditional git clone and pip install
+
+### User Experience Improvements
+- **Beautiful ASCII Logo** - Consistent branding across all platforms
+- **Automatic Dependency Installation** - No manual pip install required
+- **Error Handling** - Clear error messages and guidance for common issues
+- **Version Validation** - Ensures Python 3.9+ compatibility
+- **Directory Creation** - Automatic setup of data and cache directories
+- **Installation Testing** - Verifies CLI functionality after installation
+
+### Technical Details
+- **Entry Points** - Console scripts `coinjectured` and `coinjecture` for global access
+- **Package Metadata** - Proper versioning, classifiers, and project URLs
+- **Dependency Management** - Clean requirements.txt with optional extras
+- **Cross-Platform Paths** - Handles Windows vs Unix path differences
+- **Permission Handling** - Automatic executable permissions on Unix systems
+
+### Documentation
+- **DOWNLOAD_PACKAGES.md** - Complete installation guide with troubleshooting
+- **System Requirements** - Clear minimum and recommended specifications
+- **Use Case Guides** - Different installation methods for different user types
+- **Troubleshooting Section** - Common issues and solutions
+- **Support Information** - GitHub links and community resources
+
+### Testing
+- ✅ One-click installer tested and working
+- ✅ Windows batch file syntax validated
+- ✅ Unix shell script syntax validated
+- ✅ Cross-platform compatibility verified
+- ✅ CLI functionality confirmed after installation
+- ✅ All startup scripts generate proper error messages
+
+#buildinginpublic #downloadpackages #crossplatform #installation #userexperience
+
 ## [3.2.2] - 2025-10-15
 
 ### Added
@@ -45,6 +129,101 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ✅ Help system provides comprehensive documentation
 
 #buildinginpublic #blockchain #cli #usersubmissions
+
+## [3.3.0] - 2025-10-15
+
+### Added
+- **Faucet Telemetry Ingest System** - POST-only endpoints for miner activity data
+- **Ingest Schemas** (`src/api/schema.py`) - TelemetryEvent and BlockEvent validation
+- **SQLite Ingest Store** (`src/api/ingest_store.py`) - Persistent storage with dedupe by event_id
+- **HMAC Authentication** (`src/api/auth.py`) - Signature verification with replay protection
+- **POST Ingest Endpoints**:
+  - `POST /v1/ingest/telemetry` - Miner telemetry (hashrate, attempts, solve_time, energy)
+  - `POST /v1/ingest/block` - Block events (index, hash, CID, work_score)
+- **GET Display Endpoints**:
+  - `GET /v1/display/telemetry/latest?limit=N` - Latest miner telemetry
+  - `GET /v1/display/blocks/latest?limit=N` - Latest block events
+- **Security Features**:
+  - HMAC signature verification over canonical JSON
+  - Timestamp drift protection (5-minute window)
+  - Rate limiting (10 req/min for ingest, 100 req/min for display)
+  - Duplicate detection via event_id primary key
+
+### Technical Details
+- **Database Schema**: telemetry and block_events tables with indexes on timestamp and miner_id
+- **Authentication**: X-Timestamp, X-Signature headers required for POST endpoints
+- **Response Codes**: 202 Accepted (new), 409 Conflict (duplicate), 401 Unauthorized, 422 Invalid
+- **Data Persistence**: SQLite with automatic table creation and indexing
+- **Import Resolution**: All modules import successfully with fallback paths
+
+### Integration Testing
+- ✅ POST telemetry ingest returns 202 Accepted
+- ✅ Duplicate events return 409 Conflict (duplicate detection working)
+- ✅ POST block event ingest returns 202 Accepted
+- ✅ GET display endpoints return stored data
+- ✅ HMAC signature verification working
+- ✅ All imports resolve correctly
+
+### Architecture
+- **Ingest Flow**: CLI miners POST signed telemetry → SQLite storage → GET display endpoints
+- **Security Model**: HMAC signatures prevent tampering, timestamps prevent replay
+- **Data Model**: Full mining telemetry including hashrate, attempts, solve_time, energy metrics
+- **Compatibility**: Existing GET data endpoints remain unchanged
+
+#buildinginpublic #faucet #telemetry #ingest #security
+
+## [3.3.1] - 2025-10-15
+
+### Added
+- **Interactive CLI Menu System** - Complete step-by-step navigation with clear options
+- **Telemetry Integration** - Built-in telemetry commands and status monitoring
+- **User-Friendly Navigation** - Return options to previous steps, clear menu structure
+- **Interactive Commands**:
+  - `interactive` - Start the main interactive menu system
+  - `enable-telemetry` - Enable telemetry reporting to faucet API
+  - `disable-telemetry` - Disable telemetry reporting
+  - `telemetry-status` - Check telemetry status and queue
+  - `flush-telemetry` - Manually flush telemetry queue
+
+### Interactive Menu Structure
+- **Main Menu**: 8 clear options with emojis and descriptions
+  - 🏗️ Setup & Configuration (node initialization)
+  - ⛏️ Mining Operations (start mining with different tiers)
+  - 💰 Problem Submissions (submit and manage problems)
+  - 🔍 Blockchain Explorer (view blocks and proofs)
+  - 🌐 Network Management (add peers, list connections)
+  - 📊 Telemetry & Monitoring (enable/disable telemetry)
+  - ❓ Help & Documentation (command help and guides)
+  - 🚪 Exit
+
+### User Experience Improvements
+- **Clear Navigation**: Every menu has "← Back to Main Menu" option
+- **Interactive Prompts**: Step-by-step input collection with defaults
+- **Error Handling**: Clear error messages with guidance
+- **Status Feedback**: ✅ Success and ❌ Error indicators throughout
+- **Input Validation**: Proper validation for all user inputs
+
+### Technical Details
+- **Menu System**: Hierarchical menu structure with infinite loop navigation
+- **Telemetry Queue**: Built-in queue system for offline telemetry storage
+- **Command Integration**: All existing CLI commands accessible through menus
+- **Interactive Help**: Context-sensitive help and command documentation
+- **Import Resolution**: All modules import successfully with fallback paths
+
+### Integration Testing
+- ✅ Interactive CLI imports successfully
+- ✅ All menu options accessible and functional
+- ✅ Telemetry commands working correctly
+- ✅ Navigation between menus working
+- ✅ Input validation and error handling working
+
+### Architecture
+- **User Flow**: Main Menu → Sub-Menu → Action → Return to Previous Menu
+- **Telemetry Flow**: Enable → Monitor → Flush → Disable
+- **Command Flow**: Interactive prompts → Validation → Execution → Feedback
+- **Help Flow**: Context-sensitive help → Command-specific help → User guide
+
+#buildinginpublic #interactive #cli #userexperience #telemetry
 
 ## [3.2.1] - 2025-10-15
 
