@@ -5,6 +5,20 @@ All notable changes to COINjecture will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.8] - 2025-10-15
+
+### Fixed
+- **IPFS health check method** corrected to use GET instead of POST for /api/v0/id endpoint
+- **IPFS connectivity detection** now properly checks node health with correct HTTP method
+- **Proof bundle storage** should now pass health checks and upload successfully
+
+### Technical Details
+- Fixed IPFS health check to use GET method for `/api/v0/id` endpoint
+- IPFS API `/api/v0/id` endpoint requires GET method, not POST
+- Should resolve "405 Method Not Allowed" errors in IPFS health checks
+
+#buildinginpublic #blockchain #bugfix
+
 ## [3.1.7] - 2025-10-15
 
 ### Fixed
