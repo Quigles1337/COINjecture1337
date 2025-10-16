@@ -5,6 +5,20 @@ All notable changes to COINjecture will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.3] - 2025-10-15
+
+### Fixed
+- **Critical import error** in ConsensusEngine preventing IPFS proof bundle uploads
+- **Module resolution** - Added try-except import pattern for proof_bundler module
+- **IPFS integration** now properly uploads genesis block proof data on droplet
+
+### Technical Details
+- Fixed import statement in `_build_genesis` method to follow relative/absolute import pattern
+- Ensures IPFS proof bundles upload correctly when consensus engine initializes
+- Resolves `ModuleNotFoundError: No module named 'api'` on production deployments
+
+#buildinginpublic #blockchain #bugfix
+
 ## [3.1.2] - 2025-10-15
 
 ### Fixed

@@ -208,7 +208,11 @@ class ConsensusEngine:
         
         # Upload proof bundle to IPFS
         try:
-            from api.proof_bundler import create_proof_bundle, serialize_proof_bundle
+            try:
+                from .api.proof_bundler import create_proof_bundle, serialize_proof_bundle
+            except ImportError:
+                from api.proof_bundler import create_proof_bundle, serialize_proof_bundle
+            
             proof_bundle = create_proof_bundle(genesis_block)
             bundle_bytes = serialize_proof_bundle(proof_bundle)
             cid = self.storage.store_proof_bundle(bundle_bytes)
