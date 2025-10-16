@@ -53,6 +53,29 @@ COINjecture is a utility-based blockchain that proves computational work through
 2. Review [API.README.md](API.README.md) User Submissions section to submit problems
 3. Check [docs/testing.md](docs/testing.md) for development environment setup
 
+## 🚀 Download & Install
+
+### **macOS Users (Recommended)**
+**[Download COINjecture-macOS-v3.6.5-Final.zip](cli-packages/dist/COINjecture-macOS-v3.6.5-Final.zip)** (39.2 MB)
+
+**Features:**
+- ✅ **Zero Security Warnings**: Comprehensive security bypass
+- ✅ **No Python Required**: Completely self-contained
+- ✅ **Interactive Menu**: User-friendly interface
+- ✅ **Direct CLI Access**: Full command-line functionality
+- ✅ **Network Integration**: Live COINjecture blockchain
+- ✅ **Desktop Integration**: Desktop shortcuts and Applications folder
+
+**Installation:**
+1. Download the zip file above
+2. Extract and run `./install.sh`
+3. Launch from desktop shortcut or Applications folder
+4. Zero macOS security warnings guaranteed!
+
+### **Other Platforms**
+- **Windows**: Coming soon
+- **Linux**: Coming soon
+
 ## Interactive CLI
 
 COINjecture includes a comprehensive command-line interface with 15 commands and interactive menus:
