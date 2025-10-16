@@ -5,6 +5,38 @@ All notable changes to COINjecture will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2025-10-15
+
+### Added
+- **Node Module Implementation** - Complete node lifecycle management per docs/blockchain/node.md
+- **User Submissions Integration** - ProblemPool integrated into node lifecycle for miners
+- **Role-Based Node Behavior** - Support for light, full, miner, and archive node roles
+- **Mining with User Problems** - Miners can now solve user-submitted problems with bounties
+- **Problem Submission API** - Methods to submit problems, check status, and list active submissions
+- **Service Composition** - Network, consensus, storage, and POW services properly orchestrated
+- **Configuration Management** - NodeConfig with TOML/YAML support for all node parameters
+
+### Changed
+- **Mining Flow** - Now queries ProblemPool first, falls back to consensus-generated problems
+- **Node Architecture** - Modular design with proper service initialization and lifecycle
+- **User Submissions** - Now fully integrated into mining operations with bounty tracking
+
+### Technical Details
+- Created `src/node.py` with complete Node class implementation
+- Integrated `src/user_submissions/` ProblemPool into node lifecycle
+- Added mining loop that prioritizes user-submitted problems over consensus problems
+- Implemented role-based service startup (miner, full, light, archive)
+- Added problem submission, status checking, and listing methods
+- Node can now run as a full blockchain participant with user problem solving
+
+### Integration Points
+- **ProblemPool Integration**: Miners query user submissions before falling back to consensus
+- **Bounty System**: Solutions recorded with bounty information for user submissions
+- **Service Orchestration**: All blockchain services (network, consensus, storage, POW) properly composed
+- **Configuration**: Full node configuration with role selection and service parameters
+
+#buildinginpublic #blockchain #node #usersubmissions
+
 ## [3.1.11] - 2025-10-15
 
 ### Fixed
