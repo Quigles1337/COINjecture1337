@@ -118,8 +118,17 @@ class IPFSClient:
             IPFS CID
         """
         try:
-            response = self._make_request("add", method="POST", data=obj_bytes)
-            return response.get("Hash", "")
+            import requests  # type: ignore  # External dependency
+        except ImportError:
+            raise Exception("requests library not available. Install with: pip install requests")
+        
+        try:
+            url = f"{self.api_url}/api/v0/add"
+            files = {"file": ("data", obj_bytes, "application/octet-stream")}
+            response = requests.post(url, files=files, timeout=self.timeout)
+            response.raise_for_status()
+            result = response.json()
+            return result.get("Hash", "")
         except Exception as e:
             raise Exception(f"Failed to add object to IPFS: {e}")
     

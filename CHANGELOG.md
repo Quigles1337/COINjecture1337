@@ -5,6 +5,20 @@ All notable changes to COINjecture will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.5] - 2025-10-15
+
+### Fixed
+- **IPFS client add method** now uses proper multipart form data for file uploads
+- **IPFS upload functionality** fixed to work with IPFS API requirements
+- **Proof bundle storage** should now successfully upload to IPFS on droplet
+
+### Technical Details
+- Fixed IPFS client `add` method to use `requests.files` parameter instead of raw bytes
+- IPFS API requires multipart form data for file uploads, not raw POST data
+- Should resolve "IPFS not available" warnings and enable actual proof bundle storage
+
+#buildinginpublic #blockchain #bugfix
+
 ## [3.1.4] - 2025-10-15
 
 ### Fixed
