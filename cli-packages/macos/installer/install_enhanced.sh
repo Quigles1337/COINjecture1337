@@ -224,3 +224,29 @@ echo "🗑️  To Uninstall:"
 echo "   Run: $INSTALL_DIR/uninstall.sh"
 echo ""
 print_success "COINjecture is ready to use with ZERO security warnings! 🎯"
+
+# Auto-launch COINjecture
+echo ""
+print_special "🚀 LAUNCHING COINjecture..."
+echo ""
+
+# Ask user if they want to launch immediately
+echo -e "${YELLOW}Would you like to launch COINjecture now? (y/n):${NC} "
+read -r launch_choice
+
+if [[ "$launch_choice" =~ ^[Yy]$ ]]; then
+    print_status "Launching COINjecture..."
+    echo ""
+    
+    # Launch COINjecture with security bypass
+    cd "$INSTALL_DIR"
+    ./COINjecture-Safe
+else
+    echo ""
+    print_status "COINjecture installation complete!"
+    print_status "You can launch it anytime using:"
+    echo "   • Desktop shortcut: ~/Desktop/COINjecture.command"
+    echo "   • Applications folder: ~/Applications/COINjecture-CLI"
+    echo "   • Direct command: $INSTALL_DIR/COINjecture-Safe"
+    echo ""
+fi
