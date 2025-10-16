@@ -155,7 +155,10 @@ class ConsensusEngine:
             Genesis block
         """
         # Generate genesis problem
-        from core.blockchain import ProblemType
+        try:
+            from .core.blockchain import ProblemType
+        except ImportError:
+            from core.blockchain import ProblemType
         genesis_problem = self.problem_registry.generate(
             problem_type=ProblemType.SUBSET_SUM,
             seed=self.config.genesis_seed,
@@ -166,7 +169,10 @@ class ConsensusEngine:
         genesis_solution = self.problem_registry.solve(genesis_problem)
         
         # Calculate genesis complexity
-        from core.blockchain import subset_sum_complexity, EnergyMetrics
+        try:
+            from .core.blockchain import subset_sum_complexity, EnergyMetrics
+        except ImportError:
+            from core.blockchain import subset_sum_complexity, EnergyMetrics
         energy_metrics = EnergyMetrics(
             solve_energy_joules=0.1,
             verify_energy_joules=0.0001,
