@@ -184,7 +184,7 @@ class IPFSClient:
             return self._is_healthy
         
         try:
-            self._make_request("version", method="POST")
+            self._make_request("version", method="GET")
             self._is_healthy = True
         except Exception:
             self._is_healthy = False
@@ -685,7 +685,8 @@ class StorageManager:
             'merkle_root': block.merkle_root,
             'mining_capacity': block.mining_capacity.value if hasattr(block.mining_capacity, 'value') else str(block.mining_capacity),
             'cumulative_work_score': block.cumulative_work_score,
-            'block_hash': block.block_hash
+            'block_hash': block.block_hash,
+            'offchain_cid': getattr(block, 'offchain_cid', None)
         }
         return json.dumps(header_dict).encode()
     
@@ -706,7 +707,8 @@ class StorageManager:
             complexity=None,  # Will be None for header-only
             mining_capacity=ProblemTier(header_dict['mining_capacity']),
             cumulative_work_score=header_dict['cumulative_work_score'],
-            block_hash=header_dict['block_hash']
+            block_hash=header_dict['block_hash'],
+            offchain_cid=header_dict.get('offchain_cid', None)
         )
     
     def _serialize_block(self, block: Block) -> bytes:
@@ -722,7 +724,8 @@ class StorageManager:
             'solution': block.solution,
             'mining_capacity': block.mining_capacity.value if hasattr(block.mining_capacity, 'value') else str(block.mining_capacity),
             'cumulative_work_score': block.cumulative_work_score,
-            'block_hash': block.block_hash
+            'block_hash': block.block_hash,
+            'offchain_cid': getattr(block, 'offchain_cid', None)
         }
         return json.dumps(block_dict).encode()
     
@@ -744,7 +747,8 @@ class StorageManager:
             solution=block_dict['solution'],
             mining_capacity=ProblemTier(block_dict['mining_capacity']),
             cumulative_work_score=block_dict['cumulative_work_score'],
-            block_hash=block_dict['block_hash']
+            block_hash=block_dict['block_hash'],
+            offchain_cid=block_dict.get('offchain_cid', None)
         )
 
 

@@ -144,6 +144,7 @@ class CacheUpdater:
             "index": block.index,
             "timestamp": block.timestamp,
             "previous_hash": block.previous_hash,
+            "transactions": getattr(block, 'transactions', []),
             "merkle_root": block.merkle_root,
             "mining_capacity": str(block.mining_capacity),
             "cumulative_work_score": block.cumulative_work_score,

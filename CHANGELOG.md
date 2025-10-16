@@ -5,6 +5,42 @@ All notable changes to COINjecture will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.9] - 2025-10-15
+
+### Fixed
+- **IPFS Health Check Method** - Fixed IPFS health check to use GET method instead of POST for `/api/v0/version` endpoint
+- **Block Serialization** - Added missing `offchain_cid` field to block serialization methods
+- **Header Serialization** - Added missing `offchain_cid` field to header serialization methods
+- **IPFS CID Persistence** - Fixed IPFS CIDs being lost during block storage and retrieval operations
+
+### Technical Details
+- **Health Check Fix**: Changed `_make_request("version", method="POST")` to `_make_request("version", method="GET")` in IPFSClient
+- **Serialization Fix**: Added `'offchain_cid': getattr(block, 'offchain_cid', None)` to `_serialize_block()` and `_serialize_header()`
+- **Deserialization Fix**: Added `offchain_cid=dict.get('offchain_cid', None)` to `_deserialize_block()` and `_deserialize_header()`
+- **Data Integrity**: Ensures IPFS CIDs are properly preserved throughout the entire storage lifecycle
+
+### Impact
+- **IPFS Integration**: IPFS CIDs now properly appear in API responses instead of showing as `null`
+- **Block Headers**: Block headers now correctly include IPFS proof bundle references
+- **Cache Updates**: Cache updater will receive blocks with valid IPFS CIDs
+- **Proof Access**: Full proof data is now accessible via IPFS CIDs in block headers
+
+#buildinginpublic #ipfsintegration #blockheaders #datapersistence #serializationfix
+
+## [3.3.8] - 2025-10-15
+
+### Fixed
+- **Function Call Mismatch** - Fixed ConsensusEngine initialization in node.py to use positional arguments instead of keyword arguments
+- **Parameter Order** - Corrected parameter order in ConsensusEngine constructor call to match function signature
+- **Language Interface** - Resolved mismatch between function documentation and actual function calls
+
+### Technical Details
+- **ConsensusEngine Call**: Fixed `ConsensusEngine(storage=, problem_registry=, config=)` to `ConsensusEngine(config, storage, problem_registry)`
+- **Parameter Order**: Ensured function calls match the actual method signature: `__init__(self, config, storage, problem_registry)`
+- **Interface Consistency**: Aligned function calls with documented interfaces
+
+#buildinginpublic #functioncalls #interfaceconsistency #parameterorder
+
 ## [3.3.7] - 2025-10-15
 
 ### Added

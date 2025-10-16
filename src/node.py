@@ -164,9 +164,9 @@ class Node:
                 target_block_time=self.config.target_block_interval_secs
             )
             self.consensus = ConsensusEngine(
-                storage=self.storage,
-                problem_registry=self.problem_registry,
-                config=consensus_config
+                consensus_config,
+                self.storage,
+                self.problem_registry
             )
             
             # Initialize network protocol
