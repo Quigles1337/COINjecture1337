@@ -5,6 +5,43 @@ All notable changes to COINjecture will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2025-10-15
+
+### Added
+- **Faucet API Module** (`src/api/`) - Live blockchain data streaming API
+  - Flask-based REST API server (`faucet_server.py`)
+  - File-based cache manager (`cache_manager.py`) 
+  - Background cache updater with IPFS integration (`update_cache.py`)
+  - REST endpoints: `/v1/data/block/latest`, `/v1/data/block/{index}`, `/v1/data/blocks`
+  - Health check endpoint (`/health`)
+  - Rate limiting (100 requests/minute per IP)
+  - CORS enabled for browser access
+  - IPFS connectivity verification and CID validation
+  - Real-time cache updates every 30 seconds
+  - Comprehensive error handling with standard HTTP codes
+
+### Changed
+- Updated `requirements.txt` with Flask dependencies (Flask, Flask-CORS, Flask-Limiter)
+- Added cache directory to `.gitignore` for data/cache/ files
+- API uses capacity terminology throughout
+
+### Fixed
+- Import path issues in API modules
+- IPFS health check method compatibility
+- Flask-Limiter dependency installation
+
+### Documentation
+- Complete API documentation in `FAUCET_API.README.md`
+- Deployment files: `Procfile`, `runtime.txt`, `.env.example`
+- All API endpoints include comprehensive docstrings
+- Test suites for all API components
+
+### Deployment
+- Ready for DigitalOcean deployment (164.92.89.62)
+- Production-ready with nginx reverse proxy configuration
+- Systemd service files for auto-restart
+- #buildinginpublic launch ready
+
 ## [3.0.4] - 2025-10-15
 
 ### Added

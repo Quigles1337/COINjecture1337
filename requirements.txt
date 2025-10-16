@@ -4,6 +4,11 @@
 # HTTP client for IPFS API integration
 requests>=2.25.0
 
+# Flask dependencies for Faucet API
+Flask>=2.0.0
+Flask-CORS>=3.0.0
+Flask-Limiter>=2.0.0
+
 # Optional compression dependencies for network module
 # zstandard>=0.18.0  # Uncomment for zstd compression support
 # python-snappy>=0.6.0  # Uncomment for snappy compression support

@@ -178,5 +178,8 @@ data/
 logs/
 *.log
 
+# Faucet API cache files
+data/cache/
+
 # IPFS
 .ipfs/
