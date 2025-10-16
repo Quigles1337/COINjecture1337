@@ -5,6 +5,28 @@ All notable changes to COINjecture will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.1] - 2025-10-15
+
+### Fixed
+- **CLI Network Connection** - CLI now properly connects to live COINjecture network instead of creating local sample blocks
+- **Live Blockchain Data** - Interactive menu now displays real blockchain data from the droplet
+- **Network Status Display** - Shows live network status, current block, work score, and mining capacity
+- **Telemetry Integration** - Automatic connection to live network with telemetry enabled by default
+
+### Technical Details
+- **Removed Sample Block Creation**: Eliminated local sample block generation in `src/core/blockchain.py`
+- **Live Data Integration**: CLI fetches real blockchain data from droplet API
+- **Network Connectivity Check**: Automatic connection verification on CLI startup
+- **Real-time Status**: Interactive menu shows live network information
+
+### Impact
+- **Authentic Experience**: Users now interact with the actual COINjecture blockchain
+- **Live Network Integration**: CLI connects to the live network by default
+- **Real Blockchain Data**: All operations use actual blockchain state from the droplet
+- **Proper Telemetry**: Mining data is sent to the live network
+
+#buildinginpublic #livenetwork #cliconnection #blockchainintegration
+
 ## [3.5.0] - 2025-10-15
 
 ### Added

@@ -35,9 +35,95 @@ class COINjectureCLI:
         # Default faucet API endpoint
         self.faucet_api_url = "http://167.172.213.70:5000"
         self.offline_queue_file = "offline_queue.json"
-        self.telemetry_enabled = False
+        self.telemetry_enabled = True  # Enable telemetry by default
         self.telemetry_queue = queue.Queue()
         self.telemetry_thread = None
+        self._check_network_connectivity()
+    
+    def _check_network_connectivity(self):
+        """Check network connectivity to the live COINjecture network."""
+        try:
+            response = requests.get(f"{self.faucet_api_url}/health", timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                print(f"🌐 Connected to COINjecture Network")
+                print(f"   Network Status: {data.get('status', 'unknown')}")
+                print(f"   Latest Block: #{data.get('cache', {}).get('latest_block_index', 'unknown')}")
+                print(f"   API URL: {self.faucet_api_url}")
+                print(f"   Telemetry: {'✅ Enabled' if self.telemetry_enabled else '❌ Disabled'}")
+                return True
+            else:
+                print(f"⚠️  Network connection failed (HTTP {response.status_code})")
+                print(f"   Falling back to offline mode")
+                self.telemetry_enabled = False
+                return False
+        except Exception as e:
+            print(f"⚠️  Network connection failed: {e}")
+            print(f"   Falling back to offline mode")
+            self.telemetry_enabled = False
+            return False
+    
+    def _fetch_live_blockchain_data(self):
+        """Fetch live blockchain data from the droplet."""
+        try:
+            response = requests.get(f"{self.faucet_api_url}/v1/data/block/latest", timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                return data.get('data', {})
+            else:
+                print(f"⚠️  Failed to fetch blockchain data (HTTP {response.status_code})")
+                return None
+        except Exception as e:
+            print(f"⚠️  Error fetching blockchain data: {e}")
+            return None
+    
+    def _send_mining_data(self, block_data):
+        """Send mining data to the droplet."""
+        if not self.telemetry_enabled:
+            return False
+        
+        try:
+            # Create telemetry event
+            telemetry_event = {
+                "event_id": f"mining_{int(time.time())}",
+                "miner_id": "local_miner",
+                "ts": time.time(),
+                "capacity": block_data.get('mining_capacity', 'TIER_1_MOBILE'),
+                "metrics": {
+                    "block_index": block_data.get('index', 0),
+                    "work_score": block_data.get('cumulative_work_score', 0),
+                    "solve_time": block_data.get('proof_summary', {}).get('computational_metrics', {}).get('measured_solve_time', 0),
+                    "verify_time": block_data.get('proof_summary', {}).get('computational_metrics', {}).get('measured_verify_time', 0)
+                },
+                "node": {
+                    "version": "3.5.0",
+                    "platform": "local"
+                },
+                "signature": "local_mining_signature"
+            }
+            
+            # Send to droplet
+            response = requests.post(
+                f"{self.faucet_api_url}/v1/ingest/telemetry",
+                json=telemetry_event,
+                headers={
+                    "Content-Type": "application/json",
+                    "X-Signature": "local_mining_signature",
+                    "X-Timestamp": str(int(time.time()))
+                },
+                timeout=10
+            )
+            
+            if response.status_code == 202:
+                print(f"📡 Mining data sent to network")
+                return True
+            else:
+                print(f"⚠️  Failed to send mining data: HTTP {response.status_code}")
+                return False
+                
+        except Exception as e:
+            print(f"⚠️  Error sending mining data: {e}")
+            return False
     
     def _create_parser(self) -> argparse.ArgumentParser:
         """Create the main argument parser."""
@@ -1047,6 +1133,19 @@ Examples:
             print("\n" + "="*60)
             print("🚀 COINjecture Interactive Menu")
             print("="*60)
+            
+            # Show live network status
+            if self.telemetry_enabled:
+                live_data = self._fetch_live_blockchain_data()
+                if live_data:
+                    print(f"🌐 Live Network: Block #{live_data.get('index', 'unknown')} | Hash: {live_data.get('block_hash', 'unknown')[:16]}...")
+                    print(f"   Work Score: {live_data.get('cumulative_work_score', 0):.2f} | Capacity: {live_data.get('mining_capacity', 'unknown')}")
+                else:
+                    print("🌐 Live Network: Connected but no data available")
+            else:
+                print("🌐 Live Network: Offline mode")
+            
+            print("="*60)
             print("1. 🏗️  Setup & Configuration")
             print("2. ⛏️  Mining Operations") 
             print("3. 💰 Problem Submissions")
@@ -1112,6 +1211,22 @@ Examples:
         while True:
             print("\n" + "-"*40)
             print("⛏️  Mining Operations")
+            print("-"*40)
+            
+            # Show live network mining data
+            if self.telemetry_enabled:
+                live_data = self._fetch_live_blockchain_data()
+                if live_data:
+                    print(f"🌐 Live Network Mining:")
+                    print(f"   Current Block: #{live_data.get('index', 'unknown')}")
+                    print(f"   Work Score: {live_data.get('cumulative_work_score', 0):.2f}")
+                    print(f"   Capacity: {live_data.get('mining_capacity', 'unknown')}")
+                    print(f"   Hash: {live_data.get('block_hash', 'unknown')[:16]}...")
+                else:
+                    print("🌐 Live Network: Connected but no data available")
+            else:
+                print("🌐 Live Network: Offline mode")
+            
             print("-"*40)
             print("1. Start Mining (Desktop)")
             print("2. Start Mining (Mobile)")
@@ -1476,6 +1591,19 @@ Examples:
         print("📊 Mining Status:")
         print(f"   Telemetry: {'✅ Enabled' if self.telemetry_enabled else '❌ Disabled'}")
         print(f"   Queue size: {self.telemetry_queue.qsize()}")
+        
+        # Show live network data
+        if self.telemetry_enabled:
+            live_data = self._fetch_live_blockchain_data()
+            if live_data:
+                print(f"   Live Network: Block #{live_data.get('index', 'unknown')}")
+                print(f"   Work Score: {live_data.get('cumulative_work_score', 0):.2f}")
+                print(f"   Capacity: {live_data.get('mining_capacity', 'unknown')}")
+            else:
+                print("   Live Network: Connected but no data available")
+        else:
+            print("   Live Network: Offline mode")
+        
         print("   Use 'telemetry-status' for detailed info")
     
     # Telemetry command handlers
