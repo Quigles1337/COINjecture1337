@@ -5,6 +5,20 @@ All notable changes to COINjecture will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.2] - 2025-10-15
+
+### Fixed
+- **Critical dataclass field order fix** in Block class to resolve Python dataclass validation error
+- **Cache service stability** - fixed service crashes due to field ordering issue
+- **API availability** - resolved 502 errors caused by dataclass initialization failures
+
+### Technical Details
+- Moved `offchain_cid` field after `block_hash` in Block dataclass
+- Fields with default values must come after fields without defaults in Python dataclasses
+- This fix enables proper service startup and cache generation
+
+#buildinginpublic #blockchain #bugfix
+
 ## [3.1.1] - 2025-10-15
 
 ### Added
