@@ -128,6 +128,24 @@ class CacheUpdater:
         Returns:
             Block data in cache format
         """
+        # Extract proof summary data safely
+        proof_summary = {}
+        try:
+            if hasattr(block, 'problem') and hasattr(block, 'solution') and hasattr(block, 'complexity'):
+                proof_summary = {
+                    "problem_type": block.problem.get("type", "unknown") if isinstance(block.problem, dict) else "unknown",
+                    "problem_instance": block.problem,
+                    "solution": block.solution,
+                    "problem_size": getattr(block.complexity, 'problem_size', 0),
+                    "solution_size": getattr(block.complexity, 'solution_size', 0),
+                    "measured_solve_time": getattr(block.complexity, 'measured_solve_time', 0.0),
+                    "measured_verify_time": getattr(block.complexity, 'measured_verify_time', 0.0),
+                    "energy_joules": getattr(block.complexity.energy_metrics, 'solve_energy_joules', 0.0) if hasattr(block.complexity, 'energy_metrics') else 0.0,
+                }
+        except Exception as e:
+            print(f"Warning: Could not extract proof summary: {e}")
+            proof_summary = {"error": str(e)}
+        
         return {
             "index": block.index,
             "timestamp": block.timestamp,
@@ -136,6 +154,7 @@ class CacheUpdater:
             "mining_capacity": block.mining_capacity.value if hasattr(block.mining_capacity, 'value') else str(block.mining_capacity),
             "cumulative_work_score": block.cumulative_work_score,
             "block_hash": block.block_hash,
+            "proof_summary": proof_summary,
             "offchain_cid": getattr(block, 'offchain_cid', None),
             "last_updated": time.time()
         }

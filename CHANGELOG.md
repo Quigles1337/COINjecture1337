@@ -5,6 +5,35 @@ All notable changes to COINjecture will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.1] - 2025-10-15
+
+### Added
+- **Real NP-complete proof data exposure** in API responses
+- **Automatic IPFS upload** of full proof bundles when blocks are created
+- **`proof_summary` field** in block data with problem instances and solutions
+- **`offchain_cid` field** in Block class for IPFS proof bundle storage
+- **Proof bundler utility** (`src/api/proof_bundler.py`) for serializing complete proof data
+- **Comprehensive proof data** including problem instances, solutions, computational metrics, and energy measurements
+
+### Changed
+- **API responses now include actual problem instances, solutions, and computational metrics**
+- **Cache format updated** to include proof summary data with NP problem solving details
+- **Block creation in ConsensusEngine** now uploads proof bundles to IPFS automatically
+- **`/v1/data/block/latest` endpoint** returns real subset sum problems and solutions
+- **Genesis block generation** now includes full proof data and IPFS upload
+
+### Fixed
+- **Genesis block now properly generates and stores proof data**
+- **IPFS integration in StorageManager** properly utilized for proof storage
+- **Block serialization** now includes offchain_cid field
+
+### Documentation
+- **API responses now demonstrate real NP-complete problem solving**
+- **Full proof bundles accessible** via existing `/v1/data/ipfs/<cid>` endpoint
+- **Real computational complexity metrics** exposed in API responses
+
+#buildinginpublic #blockchain #NP-complete
+
 ## [3.1.0] - 2025-10-15
 
 ### Added

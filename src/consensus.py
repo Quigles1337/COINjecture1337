@@ -206,6 +206,18 @@ class ConsensusEngine:
             block_hash=self._calculate_genesis_hash()
         )
         
+        # Upload proof bundle to IPFS
+        try:
+            from api.proof_bundler import create_proof_bundle, serialize_proof_bundle
+            proof_bundle = create_proof_bundle(genesis_block)
+            bundle_bytes = serialize_proof_bundle(proof_bundle)
+            cid = self.storage.store_proof_bundle(bundle_bytes)
+            genesis_block.offchain_cid = cid
+            print(f"✅ Genesis proof bundle uploaded to IPFS: {cid}")
+        except Exception as e:
+            print(f"⚠️  Warning: Could not upload proof bundle to IPFS: {e}")
+            genesis_block.offchain_cid = None
+        
         return genesis_block
     
     def validate_header(self, block: Block) -> bool:
