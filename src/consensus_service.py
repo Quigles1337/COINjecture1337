@@ -157,7 +157,11 @@ class ConsensusService:
             from core.blockchain import Block, ProblemTier, ComputationalComplexity, EnergyMetrics
             
             # Extract event data
-            block_index = event.get('block_index', 0)
+            # Use sequential index instead of event's block_index
+            # Get current blockchain length to determine next index
+            current_chain_length = len(self.consensus_engine.get_chain_from_genesis())
+            block_index = current_chain_length  # Next sequential index
+            
             block_hash = event.get('block_hash', '')
             cid = event.get('cid', '')
             miner_address = event.get('miner_address', '')
@@ -181,33 +185,31 @@ class ConsensusService:
             }
             solution = [1, 2, 3, 4]
             
-            # Create computational complexity
+            # Create computational complexity with all required parameters
             complexity = ComputationalComplexity(
-                time_solve_O="O(2^n)",
-                time_solve_Omega="O(2^n)",
-                time_solve_Theta=None,
-                time_verify_O="O(n)",
-                time_verify_Omega="O(n)",
-                time_verify_Theta=None,
-                space_solve_O="O(n * target)",
-                space_solve_Omega="O(n * target)",
-                space_solve_Theta=None,
-                space_verify_O="O(n)",
-                space_verify_Omega="O(n)",
-                space_verify_Theta=None,
-                problem_class="NP-Complete",
-                problem_size=5,
-                solution_size=4,
-                epsilon_approximation=None,
-                asymmetry_time=2.0,
-                asymmetry_space=1.0,
-                measured_solve_time=work_score / 1000,  # Convert work score to time
-                measured_verify_time=0.001,
-                measured_solve_space=0,
-                measured_verify_space=0,
-                problem=problem,
-                solution_quality=1.0,
-                energy_metrics=EnergyMetrics(
+                "O(2^n)",  # time_solve_O
+                "O(2^n)",  # time_solve_Omega
+                None,       # time_solve_Theta
+                "O(n)",     # time_verify_O
+                "O(n)",     # time_verify_Omega
+                None,       # time_verify_Theta
+                "O(n * target)",  # space_solve_O
+                "O(n * target)",  # space_solve_Omega
+                None,       # space_solve_Theta
+                "O(n)",     # space_verify_O
+                "O(n)",     # space_verify_Omega
+                None,       # space_verify_Theta
+                "NP-Complete",  # problem_class
+                5,          # problem_size
+                4,          # solution_size
+                None,       # epsilon_approximation
+                2.0,        # asymmetry_time
+                1.0,        # asymmetry_space
+                work_score / 1000,  # measured_solve_time
+                0.001,      # measured_verify_time
+                0,          # measured_solve_space
+                0,          # measured_verify_space
+                EnergyMetrics(
                     solve_energy_joules=work_score * 0.1,
                     verify_energy_joules=0.001,
                     solve_power_watts=100,
@@ -217,7 +219,9 @@ class ConsensusService:
                     cpu_utilization=80.0,
                     memory_utilization=50.0,
                     gpu_utilization=0.0
-                )
+                ),  # energy_metrics
+                problem,    # problem
+                1.0         # solution_quality
             )
             
             # Get previous hash from consensus engine

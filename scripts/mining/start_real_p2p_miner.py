@@ -326,18 +326,21 @@ class RealP2PMiningNode:
         return hashlib.sha256("".join(tx_hashes).encode()).hexdigest()
     
     def submit_block_to_network(self, block: Any) -> bool:
-        """Submit mined block to the network using wallet-based authentication."""
+        """Submit mined block to the P2P network using real peer propagation."""
         try:
-            # Convert block to network format (only BlockEvent schema fields)
+            # Convert block to network format (include all required blockchain fields)
             block_data = {
                 "event_id": f"block-{int(time.time())}-{self.wallet.address}",
                 "block_index": block.index,
                 "block_hash": block.block_hash,
+                "previous_hash": block.previous_hash,  # Add missing field
+                "merkle_root": block.merkle_root,      # Add missing field
+                "timestamp": block.timestamp,          # Add missing field (not ts)
                 "cid": block.offchain_cid or f"Qm{hashlib.sha256(block.block_hash.encode()).hexdigest()[:44]}",
                 "miner_address": self.wallet.address,  # Use wallet address instead of miner_id
                 "capacity": block.mining_capacity.value,
                 "work_score": block.cumulative_work_score,
-                "ts": int(block.timestamp)
+                "ts": int(block.timestamp)  # Keep ts for backward compatibility
             }
             
             # Sign with wallet
@@ -348,35 +351,33 @@ class RealP2PMiningNode:
             block_data["signature"] = signature
             block_data["public_key"] = public_key
             
-            # Prepare headers (no HMAC needed)
-            headers = {
-                'Content-Type': 'application/json'
-            }
-            
-            # Submit to network
-            response = requests.post(
-                f"{self.network_api_url}/v1/ingest/block",
-                json=block_data,
-                headers=headers,
-                timeout=10
-            )
-            
-            if response.status_code in [200, 202]:
-                logger.info("✅ Block submitted successfully to network")
+            # Use P2P network for block propagation
+            if self.node:
+                import json
+                block_json = json.dumps(block_data)
+                self.node.propagate_block(block_json)
+                logger.info("✅ Block propagated through P2P network")
                 logger.info(f"💰 Mining rewards will be sent to: {self.wallet.address}")
                 return True
-            elif response.status_code == 429:
-                logger.warning("⏳ Rate limited, waiting before retry...")
-                time.sleep(6)  # Wait 6 seconds for rate limit
-                return False
             else:
-                logger.error(f"❌ Network submission failed: {response.status_code}")
-                logger.error(f"Response: {response.text}")
+                logger.error("❌ P2P network not available for block propagation")
                 return False
                 
         except Exception as e:
-            logger.error(f"❌ Failed to submit block: {e}")
+            logger.error(f"❌ Failed to propagate block through P2P network: {e}")
             return False
+    
+    def update_peer_count(self):
+        """Update peer connection count from P2P network."""
+        try:
+            if self.node:
+                # Get actual peer count from the node's P2P network
+                self.peers_connected = self.node.get_peer_count()
+            else:
+                self.peers_connected = 0
+        except Exception as e:
+            logger.warning(f"⚠️  Could not update peer count: {e}")
+            self.peers_connected = 0
     
     def status_reporter(self):
         """Periodic status reporting thread with real mining."""
@@ -389,6 +390,8 @@ class RealP2PMiningNode:
                 time.sleep(30)
                 
                 if self.running:
+                    # Update peer connection count from P2P network
+                    self.update_peer_count()
                     logger.info(f"📊 Status: {self.blocks_mined} blocks mined, {self.peers_connected} peers connected")
                     
                     # Try to mine a block

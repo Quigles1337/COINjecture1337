@@ -181,8 +181,8 @@ class ConsensusEngine:
         offchain_cid = network_data['offchain_cid']
         previous_hash = network_data['previous_hash']
         merkle_root = network_data['merkle_root']
-        transactions = network_data['transactions']
-        proof_summary = network_data['proof_summary']
+        transactions = network_data.get('transactions', ['COINjecture blockchain initialized'])  # Default if missing
+        proof_summary = network_data.get('proof_summary', {})  # Default if missing
         cumulative_work_score = network_data.get('cumulative_work_score', 0.0)
         
         # Convert mining capacity string to ProblemTier enum

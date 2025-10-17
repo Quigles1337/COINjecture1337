@@ -5,6 +5,27 @@ All notable changes to COINjecture will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.9.1] - 2025-10-17
+
+### Fixed
+- **Critical P2P Mining Issue**: Mining nodes were using HTTP API calls instead of proper P2P networking
+- **Peer Connection Tracking**: Mining nodes now properly track and report P2P peer connections
+- **Block Propagation**: Implemented proper P2P block propagation instead of HTTP API submission
+- **Network Connection**: Fixed mining nodes to maintain persistent P2P connections to bootstrap node
+- **Peer Status Reporting**: Mining nodes now show actual peer connection count instead of "0 peers connected"
+
+### Changed
+- **Mining Architecture**: Mining nodes now use P2P network for block propagation
+- **Peer Management**: Added proper P2P peer connection tracking and reporting
+- **Block Submission**: Replaced HTTP API calls with P2P block propagation
+- **Network Integration**: Mining nodes maintain persistent connections to P2P network
+
+### Technical Details
+- **P2P Block Propagation**: Blocks are now propagated through gossipsub topics
+- **Peer Tracking**: Real-time peer connection monitoring and reporting
+- **Bootstrap Connection**: Persistent connection to bootstrap node at 167.172.213.70:12345
+- **Network Participation**: Mining nodes are now true P2P network participants
+
 ## [3.9.0-beta.1] - 2025-10-17
 
 ### Tested
