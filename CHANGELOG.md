@@ -5,6 +5,28 @@ All notable changes to COINjecture will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.9.2] - 2025-10-17
+
+### Fixed
+- **Sequential Block Mining**: Fixed mining nodes to mine sequential blocks (#2, #3, etc.) instead of always #1
+- **Blockchain State Sync**: Mining nodes now query current blockchain state before mining next block
+- **Block Chaining**: Fixed block chaining with correct previous_hash from latest network block
+- **Status Reporting**: Fixed block counting to show accurate "blocks mined" count
+- **IPFS Integration**: Implemented full IPFS integration for real CID generation instead of placeholder CIDs
+
+### Changed
+- **Block Indexing**: Mining nodes now query network for current block index before mining
+- **Block Timing**: Status reports now show after mining attempts for accurate counts
+- **IPFS Storage**: Mining nodes now upload proof bundles to IPFS for real CIDs
+- **Proof Bundles**: Real IPFS CIDs are generated and stored for all mined blocks
+
+### Technical Details
+- **Sequential Mining**: Mining nodes query `/v1/data/block/latest` to get current blockchain state
+- **Proper Chaining**: Each new block chains to the latest network block hash
+- **Accurate Counting**: Block counts now reflect actual mining success
+- **IPFS Integration**: Full IPFS client integration with real CID generation
+- **Proof Storage**: All proof bundles are stored in IPFS with real content-addressed identifiers
+
 ## [3.9.1] - 2025-10-17
 
 ### Fixed
@@ -13,18 +35,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Block Propagation**: Implemented proper P2P block propagation instead of HTTP API submission
 - **Network Connection**: Fixed mining nodes to maintain persistent P2P connections to bootstrap node
 - **Peer Status Reporting**: Mining nodes now show actual peer connection count instead of "0 peers connected"
+- **Sequential Block Mining**: Fixed mining nodes to mine sequential blocks (#2, #3, etc.) instead of always #1
+- **Blockchain State Sync**: Mining nodes now query current blockchain state before mining next block
+- **Block Chaining**: Fixed block chaining with correct previous_hash from latest network block
+- **Status Reporting**: Fixed block counting to show accurate "blocks mined" count
 
 ### Changed
 - **Mining Architecture**: Mining nodes now use P2P network for block propagation
 - **Peer Management**: Added proper P2P peer connection tracking and reporting
 - **Block Submission**: Replaced HTTP API calls with P2P block propagation
 - **Network Integration**: Mining nodes maintain persistent connections to P2P network
+- **Block Indexing**: Mining nodes now query network for current block index before mining
+- **Block Timing**: Status reports now show after mining attempts for accurate counts
 
 ### Technical Details
 - **P2P Block Propagation**: Blocks are now propagated through gossipsub topics
 - **Peer Tracking**: Real-time peer connection monitoring and reporting
 - **Bootstrap Connection**: Persistent connection to bootstrap node at 167.172.213.70:12345
 - **Network Participation**: Mining nodes are now true P2P network participants
+- **Sequential Mining**: Mining nodes query `/v1/data/block/latest` to get current blockchain state
+- **Proper Chaining**: Each new block chains to the latest network block hash
+- **Accurate Counting**: Block counts now reflect actual mining success
 
 ## [3.9.0-beta.1] - 2025-10-17
 

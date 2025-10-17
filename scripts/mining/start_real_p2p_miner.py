@@ -237,11 +237,18 @@ class RealP2PMiningNode:
                 timestamp=time.time()
             )
             
+            # Get current blockchain state to determine next block index
+            current_block_index = self._get_current_blockchain_index()
+            next_block_index = current_block_index + 1
+            
+            # Get the latest block hash for proper chaining
+            latest_block_hash = self._get_latest_block_hash()
+            
             # Create block manually
             block = Block(
-                index=1,  # First block after genesis
+                index=next_block_index,  # Next sequential block
                 timestamp=time.time(),
-                previous_hash="0000000000000000000000000000000000000000000000000000000000000000",  # Genesis hash
+                previous_hash=latest_block_hash,  # Chain to latest block
                 transactions=[reward_tx],
                 merkle_root="",  # Will be calculated
                 problem=problem,
@@ -268,32 +275,34 @@ class RealP2PMiningNode:
                 )
                 storage_manager = StorageManager(storage_config)
                 
-                if storage_manager.ipfs_client.health_check():
-                    # Create proof bundle and upload
-                    proof_data = {
-                        'problem': problem,
-                        'solution': solution,
-                        'complexity': {
-                            'solve_time': solve_time,
-                            'verify_time': verify_time,
-                            'work_score': max(complexity.measured_solve_time * 1000, problem['size'] * 0.1)
-                        }
-                    }
-                    import json
-                    bundle_bytes = json.dumps(proof_data).encode()
-                    cid = storage_manager.store_proof_bundle(bundle_bytes)
-                    if cid:
-                        block.offchain_cid = cid
-                        logger.info(f"✅ Proof bundle uploaded to IPFS: {cid}")
-                    else:
-                        # Generate placeholder CID
-                        block.offchain_cid = f"Qm{hashlib.sha256(block.block_hash.encode()).hexdigest()[:44]}"
-                        logger.info(f"📦 Proof bundle ready (placeholder CID): {block.offchain_cid}")
+                # Create proof bundle and upload directly to IPFS
+                proof_data = {
+                    'problem': problem,
+                    'solution': solution,
+                    'complexity': {
+                        'solve_time': solve_time,
+                        'verify_time': verify_time,
+                        'work_score': max(complexity.measured_solve_time * 1000, problem['size'] * 0.1)
+                    },
+                    'block_hash': block.block_hash,
+                    'timestamp': time.time(),
+                    'miner_address': self.wallet.address
+                }
+                import json
+                bundle_bytes = json.dumps(proof_data, indent=2).encode('utf-8')
+                
+                # Upload directly to IPFS using the client's add method
+                cid = storage_manager.ipfs_client.add(bundle_bytes)
+                if cid:
+                    block.offchain_cid = cid
+                    logger.info(f"✅ Proof bundle uploaded to IPFS: {cid}")
                 else:
                     # Generate placeholder CID
                     block.offchain_cid = f"Qm{hashlib.sha256(block.block_hash.encode()).hexdigest()[:44]}"
                     logger.info(f"📦 Proof bundle ready (placeholder CID): {block.offchain_cid}")
+                    
             except Exception as e:
+                logger.warning(f"⚠️  IPFS upload failed: {e}")
                 # Generate placeholder CID on error
                 block.offchain_cid = f"Qm{hashlib.sha256(block.block_hash.encode()).hexdigest()[:44]}"
                 logger.info(f"📦 Proof bundle ready (placeholder CID): {block.offchain_cid}")
@@ -324,6 +333,34 @@ class RealP2PMiningNode:
                 tx_hashes.append(hashlib.sha256(str(tx).encode()).hexdigest())
         
         return hashlib.sha256("".join(tx_hashes).encode()).hexdigest()
+    
+    def _get_current_blockchain_index(self) -> int:
+        """Get the current blockchain index from the network."""
+        try:
+            import requests
+            response = requests.get(f"{self.network_api_url}/v1/data/block/latest", timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('status') == 'success':
+                    return data['data']['index']
+            return 0  # Default to genesis (index 0)
+        except Exception as e:
+            logger.warning(f"⚠️  Could not get current blockchain index: {e}")
+            return 0  # Default to genesis (index 0)
+    
+    def _get_latest_block_hash(self) -> str:
+        """Get the latest block hash from the network."""
+        try:
+            import requests
+            response = requests.get(f"{self.network_api_url}/v1/data/block/latest", timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('status') == 'success':
+                    return data['data']['block_hash']
+            return "0000000000000000000000000000000000000000000000000000000000000000"  # Genesis hash
+        except Exception as e:
+            logger.warning(f"⚠️  Could not get latest block hash: {e}")
+            return "0000000000000000000000000000000000000000000000000000000000000000"  # Genesis hash
     
     def submit_block_to_network(self, block: Any) -> bool:
         """Submit mined block to the P2P network using real peer propagation."""
@@ -392,7 +429,6 @@ class RealP2PMiningNode:
                 if self.running:
                     # Update peer connection count from P2P network
                     self.update_peer_count()
-                    logger.info(f"📊 Status: {self.blocks_mined} blocks mined, {self.peers_connected} peers connected")
                     
                     # Try to mine a block
                     if consecutive_failures < max_failures:
@@ -414,6 +450,9 @@ class RealP2PMiningNode:
                         logger.error(f"❌ Too many consecutive failures ({max_failures}), stopping mining attempts")
                         time.sleep(60)  # Wait longer before retrying
                         consecutive_failures = 0  # Reset after waiting
+                    
+                    # Report status AFTER mining attempt
+                    logger.info(f"📊 Status: {self.blocks_mined} blocks mined, {self.peers_connected} peers connected")
                         
             except Exception as e:
                 logger.error(f"Status reporter error: {e}")
