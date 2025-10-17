@@ -22,12 +22,16 @@ try:
     from api.schema import TelemetryEvent, BlockEvent
     from api.ingest_store import IngestStore
     from api.auth import HMACAuth
+    from api.user_auth import auth_manager
+    from api.user_registration import user_bp
 except ImportError:
     # Fallback for direct execution
     from cache_manager import CacheManager
     from schema import TelemetryEvent, BlockEvent
     from ingest_store import IngestStore
     from auth import HMACAuth
+    from user_auth import auth_manager
+    from user_registration import user_bp
 
 
 class FaucetAPI:
@@ -59,6 +63,9 @@ class FaucetAPI:
             key_func=get_remote_address,
             default_limits=["100 per minute"]
         )
+        
+        # Register user management routes
+        self.app.register_blueprint(user_bp)
         
         # Register routes
         self._register_routes()
@@ -146,16 +153,32 @@ class FaucetAPI:
         def ingest_block():
             try:
                 headers = request.headers
-                sig = headers.get("X-Signature", "")
-                ts_hdr = headers.get("X-Timestamp", "0")
                 payload = request.get_json(force=True, silent=False) or {}
-                ev = BlockEvent.from_json(payload)
-                if not self.auth.verify(payload, sig, ts_hdr):
+                
+                # Enhanced authentication with user management
+                user_id = auth_manager.authenticate_request(payload, headers)
+                if not user_id:
                     return jsonify({"status": "error", "error": "UNAUTHORIZED"}), 401
+                
+                # Validate block event format
+                ev = BlockEvent.from_json(payload)
+                
+                # Get user profile for additional validation
+                user_profile = auth_manager.get_user_profile(user_id)
+                if not user_profile or not user_profile.is_active:
+                    return jsonify({"status": "error", "error": "FORBIDDEN", "message": "User not active"}), 403
+                
+                # Store block event with user attribution
+                payload['miner_id'] = user_id  # Ensure miner_id matches authenticated user
                 ok = self.ingest_store.insert_block_event(payload)
                 if not ok:
                     return jsonify({"status": "error", "error": "DUPLICATE"}), 409
-                return jsonify({"status": "accepted"}), 202
+                
+                return jsonify({
+                    "status": "accepted",
+                    "user_id": user_id,
+                    "tier": user_profile.tier
+                }), 202
             except ValueError as ve:
                 return jsonify({"status": "error", "error": "INVALID", "message": str(ve)}), 422
             except Exception as e:

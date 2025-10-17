@@ -5,6 +5,60 @@ All notable changes to COINjecture will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.9] - 2025-10-17
+
+### Fixed
+- **Mining Node Authentication**: Fixed mining node authentication by removing extra fields (`problem`, `solution`, `solve_time`) from BlockEvent submission that were not in the schema
+- **HMAC Signature Validation**: HMAC signature now correctly validates against BlockEvent schema (9 required fields only)
+- **Block Submission**: Mining nodes now successfully submit blocks to `/v1/ingest/block` endpoint
+- **Import Issues**: Fixed missing `os` import in `src/api/user_auth.py` causing import errors
+
+### Changed
+- **Block Submission Format**: Simplified block submission to only include BlockEvent metadata (9 required fields)
+- **IPFS Integration**: Full computational proof (problem/solution) stored in IPFS via CID field
+- **P2P Network**: Mining nodes connect to bootstrap peer on DigitalOcean droplet (167.172.213.70:12345)
+
+### Tested
+- **Import Validation**: Verified all module imports work correctly across the codebase
+- **Mining Functionality**: Confirmed mining node successfully mines blocks and submits to network
+- **P2P Connectivity**: Validated P2P bootstrap connectivity on DigitalOcean droplet
+- **Authentication Flow**: Verified HMAC signature generation and validation works correctly
+
+## [3.6.8] - 2025-10-16
+
+### Changed
+- **P2P Architecture Migration**: Migrated from HTTP API mining to full P2P blockchain architecture
+- **Mining Implementation**: Mining now uses proper libp2p networking with gossipsub topics
+- **Network Protocol**: Replaced HTTP API calls with NetworkProtocol for block propagation
+- **CLI Interface**: Updated CLI to reflect P2P architecture and remove deprecated HTTP methods
+
+### Removed
+- **HTTP API Mining**: Deprecated HTTP API mining endpoints in CLI
+- **API Dependencies**: Removed faucet API URL references from mining operations
+- **Legacy Methods**: Removed `_send_mining_data()` and `_submit_block_to_network()` HTTP methods
+
+### Added
+- **P2P Mining Script**: Enhanced `start_p2p_miner.py` with proper error handling and status reporting
+- **Bootstrap Peer Discovery**: P2P mining node connects to bootstrap peers for network participation
+- **Enhanced Logging**: File-based logging with periodic status reporting
+- **Configuration Validation**: Pre-startup validation for data directories and network connectivity
+- **Graceful Shutdown**: Proper cleanup and shutdown procedures for P2P nodes
+
+### Technical Details
+- **`start_p2p_miner.py`**: Complete rewrite with P2PMiningNode class and enhanced error handling
+- **`deploy_mining_node.sh`**: Updated to use P2P networking instead of HTTP API calls
+- **`src/cli.py`**: Deprecated HTTP mining methods, added P2P configuration
+- **Network Architecture**: Full libp2p integration with gossipsub for block propagation
+- **Status Reporting**: Periodic status updates every 30 seconds with peer and block counts
+
+### Impact
+- **True P2P Mining**: Mining now participates in actual blockchain consensus via P2P
+- **Network Decentralization**: Removes dependency on centralized HTTP API for mining
+- **Enhanced Reliability**: Better error handling and status reporting for mining operations
+- **Production Ready**: P2P mining node with proper logging and graceful shutdown
+
+#p2p #mining #blockchain #decentralization #libp2p
+
 ## [3.6.7] - 2025-10-16
 
 ### Fixed

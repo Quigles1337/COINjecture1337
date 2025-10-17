@@ -125,8 +125,8 @@ class ConsensusEngine:
         self._initialize_genesis()
     
     def _initialize_genesis(self):
-        """Initialize or load genesis block."""
-        # Try to load genesis from storage
+        """Initialize or load genesis block from existing network."""
+        # Try to load genesis from storage first
         genesis_hash = self._calculate_genesis_hash()
         genesis_block = self.storage.get_block(genesis_hash)
         
@@ -134,13 +134,136 @@ class ConsensusEngine:
             self.genesis_block = genesis_block
             self._add_block_to_tree(genesis_block, receipt_time=genesis_block.timestamp)
         else:
-            # Build deterministic genesis
-            self.genesis_block = self._build_genesis()
-            self.storage.store_block(self.genesis_block)
-            self.storage.store_header(self.genesis_block)
-            self._add_block_to_tree(self.genesis_block, receipt_time=self.genesis_block.timestamp)
+            # Try to fetch genesis from existing network
+            try:
+                import requests
+                response = requests.get("http://167.172.213.70:5000/v1/data/block/latest", timeout=10)
+                if response.status_code == 200:
+                    network_data = response.json()
+                    if network_data.get('status') == 'success':
+                        print("🌐 Connected to existing COINjecture network")
+                        print(f"📊 Current block: #{network_data['data']['index']}")
+                        print(f"🔗 Block hash: {network_data['data']['block_hash'][:16]}...")
+                        print(f"⛏️  Mining capacity: {network_data['data']['mining_capacity']}")
+                        
+                        # Create genesis block from network data
+                        self.genesis_block = self._create_genesis_from_network(network_data['data'])
+                        self.storage.store_block(self.genesis_block)
+                        self.storage.store_header(self.genesis_block)
+                        self._add_block_to_tree(self.genesis_block, receipt_time=self.genesis_block.timestamp)
+                    else:
+                        raise Exception("Network data not available")
+                else:
+                    raise Exception(f"Network request failed: {response.status_code}")
+            except Exception as e:
+                print(f"⚠️  Could not connect to existing network: {e}")
+                print("🔨 Building local genesis block...")
+                # Fallback to building local genesis
+                self.genesis_block = self._build_genesis()
+                self.storage.store_block(self.genesis_block)
+                self.storage.store_header(self.genesis_block)
+                self._add_block_to_tree(self.genesis_block, receipt_time=self.genesis_block.timestamp)
         
         self.best_tip = self.block_tree.get(self.genesis_block.block_hash)
+    
+    def _create_genesis_from_network(self, network_data: Dict) -> 'Block':
+        """Create genesis block from existing network data."""
+        try:
+            from .core.blockchain import Block, ProblemTier, ProblemType, ComputationalComplexity, EnergyMetrics
+        except ImportError:
+            from core.blockchain import Block, ProblemTier, ProblemType, ComputationalComplexity, EnergyMetrics
+        
+        # Extract data from network response
+        block_hash = network_data['block_hash']
+        index = network_data['index']
+        timestamp = network_data['timestamp']
+        mining_capacity_str = network_data['mining_capacity']
+        offchain_cid = network_data['offchain_cid']
+        previous_hash = network_data['previous_hash']
+        merkle_root = network_data['merkle_root']
+        transactions = network_data['transactions']
+        proof_summary = network_data['proof_summary']
+        cumulative_work_score = network_data.get('cumulative_work_score', 0.0)
+        
+        # Convert mining capacity string to ProblemTier enum
+        mining_capacity = ProblemTier.TIER_1_MOBILE  # Default
+        if "TIER_1_MOBILE" in mining_capacity_str:
+            mining_capacity = ProblemTier.TIER_1_MOBILE
+        elif "TIER_2_DESKTOP" in mining_capacity_str:
+            mining_capacity = ProblemTier.TIER_2_DESKTOP
+        elif "TIER_3_SERVER" in mining_capacity_str:
+            mining_capacity = ProblemTier.TIER_3_SERVER
+        
+        # Extract problem and solution from proof_summary
+        problem_instance = proof_summary.get('problem_instance', {})
+        problem = {
+            'type': problem_instance.get('type', 'subset_sum'),
+            'numbers': problem_instance.get('numbers', []),
+            'target': problem_instance.get('target', 0),
+            'size': problem_instance.get('size', 0)
+        }
+        solution = proof_summary.get('solution', [])
+        
+        # Create computational complexity from proof_summary
+        comp_metrics = proof_summary.get('computational_metrics', {})
+        energy_metrics = proof_summary.get('energy_metrics', {})
+        
+        complexity = ComputationalComplexity(
+            time_solve_O=comp_metrics.get('time_solve_O', 'O(2^n)'),
+            time_solve_Omega=comp_metrics.get('time_solve_O', 'O(2^n)'),
+            time_solve_Theta=None,
+            time_verify_O=comp_metrics.get('time_verify_O', 'O(n)'),
+            time_verify_Omega=comp_metrics.get('time_verify_O', 'O(n)'),
+            time_verify_Theta=None,
+            space_solve_O=comp_metrics.get('space_solve_O', 'O(n * target)'),
+            space_solve_Omega=comp_metrics.get('space_solve_O', 'O(n * target)'),
+            space_solve_Theta=None,
+            space_verify_O=comp_metrics.get('space_verify_O', 'O(n)'),
+            space_verify_Omega=comp_metrics.get('space_verify_O', 'O(n)'),
+            space_verify_Theta=None,
+            problem_class=comp_metrics.get('problem_class', 'NP-Complete'),
+            problem_size=comp_metrics.get('problem_size', 8),
+            solution_size=comp_metrics.get('solution_size', 3),
+            epsilon_approximation=None,
+            asymmetry_time=2.0,
+            asymmetry_space=1.0,
+            measured_solve_time=comp_metrics.get('measured_solve_time', 0.001),
+            measured_verify_time=comp_metrics.get('measured_verify_time', 0.0001),
+            measured_solve_space=0,
+            measured_verify_space=0,
+            problem=problem,  # Add the problem field
+            solution_quality=1.0,  # Add the solution_quality field (1.0 for correct solution)
+            energy_metrics=EnergyMetrics(
+                solve_energy_joules=energy_metrics.get('solve_energy_joules', 0.1),
+                verify_energy_joules=energy_metrics.get('verify_energy_joules', 0.0001),
+                solve_power_watts=energy_metrics.get('solve_power_watts', 100),
+                verify_power_watts=0.0,
+                solve_time_seconds=comp_metrics.get('measured_solve_time', 0.001),
+                verify_time_seconds=comp_metrics.get('measured_verify_time', 0.0001),
+                cpu_utilization=energy_metrics.get('cpu_utilization', 80.0),
+                memory_utilization=energy_metrics.get('memory_utilization', 50.0),
+                gpu_utilization=energy_metrics.get('gpu_utilization', 0.0)
+            )
+        )
+        
+        # Create Block object from network data
+        genesis_block = Block(
+            index=index,
+            timestamp=timestamp,
+            previous_hash=previous_hash,
+            transactions=transactions,
+            merkle_root=merkle_root,
+            problem=problem,
+            solution=solution,
+            complexity=complexity,
+            mining_capacity=mining_capacity,
+            cumulative_work_score=cumulative_work_score,
+            block_hash=block_hash,
+            offchain_cid=offchain_cid
+        )
+        
+        print(f"✅ Genesis block loaded from network: {block_hash[:16]}...")
+        return genesis_block
     
     def _calculate_genesis_hash(self) -> str:
         """Calculate deterministic genesis block hash."""

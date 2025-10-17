@@ -32,8 +32,8 @@ class COINjectureCLI:
     
     def __init__(self):
         self.parser = self._create_parser()
-        # Default faucet API endpoint
-        self.faucet_api_url = "http://167.172.213.70:5000"
+        # P2P bootstrap peers (no HTTP API needed for mining)
+        self.bootstrap_peers = ["167.172.213.70:8080"]
         # IPFS API endpoint (configurable via env)
         self.ipfs_api_url = os.environ.get("IPFS_API_URL", "http://localhost:5001")
         self.ipfs_available = False
@@ -45,27 +45,12 @@ class COINjectureCLI:
         self._check_ipfs_connectivity()
     
     def _check_network_connectivity(self):
-        """Check network connectivity to the live COINjecture network."""
-        try:
-            response = requests.get(f"{self.faucet_api_url}/health", timeout=5)
-            if response.status_code == 200:
-                data = response.json()
-                print(f"🌐 Connected to COINjecture Network")
-                print(f"   Network Status: {data.get('status', 'unknown')}")
-                print(f"   Latest Block: #{data.get('cache', {}).get('latest_block_index', 'unknown')}")
-                print(f"   API URL: {self.faucet_api_url}")
-                print(f"   Telemetry: {'✅ Enabled' if self.telemetry_enabled else '❌ Disabled'}")
-                return True
-            else:
-                print(f"⚠️  Network connection failed (HTTP {response.status_code})")
-                print(f"   Falling back to offline mode")
-                self.telemetry_enabled = False
-                return False
-        except Exception as e:
-            print(f"⚠️  Network connection failed: {e}")
-            print(f"   Falling back to offline mode")
-            self.telemetry_enabled = False
-            return False
+        """Check P2P network connectivity to bootstrap peers."""
+        print(f"🌐 P2P Network Configuration")
+        print(f"   Bootstrap Peers: {', '.join(self.bootstrap_peers)}")
+        print(f"   Note: Use P2P mining node for blockchain participation")
+        print(f"   Run: ./deploy_mining_node.sh start")
+        return True
 
     def _check_ipfs_connectivity(self) -> bool:
         """Check if IPFS API is reachable and print status."""
@@ -102,116 +87,16 @@ class COINjectureCLI:
             return None
     
     def _send_mining_data(self, block_data):
-        """Send mining data to the droplet."""
-        if not self.telemetry_enabled:
-            return False
-        
-        try:
-            # Create telemetry event
-            telemetry_event = {
-                "event_id": f"mining_{int(time.time())}",
-                "miner_id": "local_miner",
-                "ts": time.time(),
-                "capacity": block_data.get('mining_capacity', 'TIER_1_MOBILE'),
-                "metrics": {
-                    "block_index": block_data.get('index', 0),
-                    "work_score": block_data.get('cumulative_work_score', 0),
-                    "solve_time": block_data.get('proof_summary', {}).get('computational_metrics', {}).get('measured_solve_time', 0),
-                    "verify_time": block_data.get('proof_summary', {}).get('computational_metrics', {}).get('measured_verify_time', 0)
-                },
-                "node": {
-                    "version": "3.5.0",
-                    "platform": "local"
-                },
-                "signature": "local_mining_signature"
-            }
-            
-            # Send to droplet
-            response = requests.post(
-                f"{self.faucet_api_url}/v1/ingest/telemetry",
-                json=telemetry_event,
-                headers={
-                    "Content-Type": "application/json",
-                    "X-Signature": "local_mining_signature",
-                    "X-Timestamp": str(int(time.time()))
-                },
-                timeout=10
-            )
-            
-            if response.status_code == 202:
-                print(f"📡 Mining data sent to network")
-                return True
-            else:
-                print(f"⚠️  Failed to send mining data: HTTP {response.status_code}")
-                return False
-                
-        except Exception as e:
-            print(f"⚠️  Error sending mining data: {e}")
-            return False
+        """Send mining data via P2P network (deprecated - use Node class instead)."""
+        print("⚠️  HTTP API mining deprecated - use P2P mining node instead")
+        print("💡 Run: ./deploy_mining_node.sh start")
+        return False
     
     def _submit_block_to_network(self, block_data):
-        """Submit mined block to the network."""
-        if not self.telemetry_enabled:
-            print("📡 Network submission disabled (offline mode)")
-            return False
-        
-        try:
-            # Try the new block submission endpoint first
-            submission_data = {
-                "block": block_data,
-                "peer_id": f"cli_{int(time.time())}",
-                "signature": "local_mining_signature"  # Placeholder, needs real signature
-            }
-            
-            # Submit to droplet block endpoint
-            response = requests.post(
-                f"{self.faucet_api_url}/v1/ingest/block",
-                json=submission_data,
-                headers={
-                    "Content-Type": "application/json",
-                    "X-Signature": "local_mining_signature",  # Placeholder
-                    "X-Timestamp": str(int(time.time()))
-                },
-                timeout=30
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                if result.get('status') == 'success':
-                    print(f"✅ Block {result.get('index', 'unknown')} submitted to network")
-                    print(f"   Block Hash: {result.get('block_hash', 'unknown')[:16]}...")
-                    return True
-                else:
-                    print(f"❌ Block submission rejected: {result.get('error', 'unknown error')}")
-                    return False
-            elif response.status_code == 404:
-                print("⚠️  Block submission endpoint not available on droplet")
-                print("   This is expected - the droplet needs to be updated with the new API")
-                print("   Block was mined successfully and will be submitted when network is ready")
-                return True  # Consider this a success since mining worked
-            elif response.status_code == 422:
-                print("⚠️  Block submission endpoint expects different data format")
-                print("   This is expected - the droplet needs to be updated with the new API")
-                print("   Block was mined successfully and will be submitted when network is ready")
-                return True  # Consider this a success since mining worked
-            else:
-                print(f"❌ Failed to submit block: HTTP {response.status_code}")
-                try:
-                    error_data = response.json()
-                    print(f"   Error: {error_data.get('error', 'unknown error')}")
-                except:
-                    print(f"   Response: {response.text[:100]}...")
-                return False
-                
-        except requests.exceptions.Timeout:
-            print("⏰ Block submission timed out - will retry later")
-            return False
-        except requests.exceptions.ConnectionError:
-            print("🔌 Network connection failed - will retry later")
-            return False
-        except Exception as e:
-            print(f"⚠️  Error submitting block: {e}")
-            return False
+        """Submit mined block via P2P network (deprecated - use Node class instead)."""
+        print("⚠️  HTTP API mining deprecated - use P2P mining node instead")
+        print("💡 Run: ./deploy_mining_node.sh start")
+        return False
     
     def _create_parser(self) -> argparse.ArgumentParser:
         """Create the main argument parser."""

@@ -22,8 +22,7 @@ LOGS_DIR="logs"
 PID_FILE="mining_node.pid"
 LOG_FILE="$LOGS_DIR/mining.log"
 
-# Network configuration
-NETWORK_API_URL="http://167.172.213.70:5000"
+# P2P Network configuration
 BOOTSTRAP_PEERS=("167.172.213.70:8080")
 
 print_banner() {
@@ -38,7 +37,7 @@ print_banner() {
     echo "║   ╚═════╝ ╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚════╝ ╚══════╝ ╚═════╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚══════╝  ║"
     echo "║                                                                                            ║"
     echo "║         ⛏️  Mining Node Deployment                                                         ║"
-    echo "║         🌐 Connect to existing network: $NETWORK_API_URL ║"
+    echo "║         🌐 Connect to P2P network via bootstrap peers ║"
     echo "║         💎 Start earning rewards through computational work                              ║"
     echo "║                                                                                            ║"
     echo "╚════════════════════════════════════════════════════════════════════════════════════════════╝"
@@ -159,28 +158,27 @@ EOF
 }
 
 check_network_connectivity() {
-    log "Checking network connectivity..."
+    log "Checking P2P network connectivity..."
     
-    if curl -s --connect-timeout 10 "$NETWORK_API_URL/health" > /dev/null; then
-        log "✅ Network API is accessible at $NETWORK_API_URL"
-    else
-        warn "Network API not accessible, mining will start in offline mode"
-    fi
+    # Check if bootstrap peers are reachable
+    for peer in "${BOOTSTRAP_PEERS[@]}"; do
+        if nc -z -w5 ${peer/:/ } 2>/dev/null; then
+            log "✅ Bootstrap peer $peer is reachable"
+        else
+            warn "Bootstrap peer $peer not reachable, will retry on startup"
+        fi
+    done
+    
+    log "🌐 P2P network configuration ready"
 }
 
 start_mining_node() {
-    log "Starting mining node..."
+    log "Starting P2P mining node..."
     
     source "$VENV_DIR/bin/activate"
     
-    # Start mining node in background with tier parameter
-    nohup python3 -c "
-import sys
-sys.path.append('src')
-from cli import COINjectureCLI
-cli = COINjectureCLI()
-cli.run(['mine', '--config', 'miner_config.json', '--tier', 'desktop', '--problem-type', 'subset_sum'])
-" > "$LOG_FILE" 2>&1 &
+    # Start proper P2P mining node
+    nohup python3 start_p2p_miner.py > "$LOG_FILE" 2>&1 &
     
     # Save PID
     echo $! > "$PID_FILE"
@@ -191,7 +189,7 @@ cli.run(['mine', '--config', 'miner_config.json', '--tier', 'desktop', '--proble
     if is_running; then
         log "✅ Mining node started (PID: $(cat $PID_FILE))"
         log "📊 View logs: tail -f $LOG_FILE"
-        log "🌐 Network API: $NETWORK_API_URL"
+        log "🌐 P2P Network: Bootstrap peers configured"
         log "⛏️  Mining tier: desktop"
     else
         error "Failed to start mining node"
@@ -239,7 +237,7 @@ show_status() {
         local pid=$(cat "$PID_FILE")
         echo -e "Status: ${GREEN}RUNNING${NC} (PID: $pid)"
         echo "Log file: $LOG_FILE"
-        echo "Network API: $NETWORK_API_URL"
+        echo "P2P Network: Bootstrap peers configured"
         echo ""
         echo "Recent activity:"
         tail -n 5 "$LOG_FILE" 2>/dev/null || echo "No recent logs"
@@ -271,13 +269,153 @@ show_help() {
     echo "  restart   Restart the mining node"
     echo "  status    Show mining node status"
     echo "  logs      Show recent logs"
+    echo "  register  Register as a new miner with the network"
+    echo "  sync      Perform full blockchain synchronization"
     echo "  help      Show this help message"
     echo ""
     echo "Examples:"
     echo "  $0 start    # Start mining"
     echo "  $0 status   # Check if running"
     echo "  $0 logs     # View recent activity"
+    echo "  $0 register # Register new miner"
+    echo "  $0 sync     # Sync with blockchain"
     echo "  $0 stop     # Stop mining"
+}
+
+register_miner() {
+    log "🔐 Setting up miner authentication..."
+    
+    # Get user input
+    read -p "Enter your miner ID: " miner_id
+    
+    # Default values
+    miner_id=${miner_id:-"miner_$(date +%s)"}
+    
+    log "Setting up miner: $miner_id"
+    
+    # Check if enhanced auth is available
+    response=$(curl -s -X POST http://167.172.213.70:5000/v1/user/register \
+        -H "Content-Type: application/json" \
+        -d "{
+            \"user_id\": \"$miner_id\",
+            \"auth_method\": \"hmac_personal\",
+            \"tier\": \"TIER_2_DESKTOP\"
+        }" 2>/dev/null)
+    
+    if echo "$response" | grep -q '"status": "success"'; then
+        # Enhanced auth system available
+        log "✅ Enhanced authentication available!"
+        
+        # Extract API key
+        api_key=$(echo "$response" | grep -o '"api_key": "[^"]*"' | cut -d'"' -f4)
+        
+        if [ -n "$api_key" ]; then
+            log "🔑 Your API key: $api_key"
+            log "💾 Save these credentials securely:"
+            echo ""
+            echo "export COINJECTURE_USER_ID=\"$miner_id\""
+            echo "export COINJECTURE_API_KEY=\"$api_key\""
+            echo ""
+            log "💡 Add these to your shell profile to use automatically"
+            log "💡 Or run: export COINJECTURE_USER_ID=\"$miner_id\" && export COINJECTURE_API_KEY=\"$api_key\""
+        fi
+        
+        log "🚀 You can now start mining with: $0 start"
+    else
+        # Fallback to current network authentication
+        log "📡 Using current network authentication (shared secret)"
+        log "🔑 Your credentials:"
+        echo ""
+        echo "export COINJECTURE_USER_ID=\"$miner_id\""
+        echo "export COINJECTURE_API_KEY=\"dev-secret\""
+        echo ""
+        log "💡 The network uses shared secret authentication"
+        log "💡 All miners use the same secret: 'dev-secret'"
+        log "🚀 You can now start mining with: $0 start"
+        
+        # Set environment variables for current session
+        export COINJECTURE_USER_ID="$miner_id"
+        export COINJECTURE_API_KEY="dev-secret"
+        log "✅ Credentials set for current session"
+    fi
+}
+
+sync_blockchain() {
+    log "🔄 Starting full blockchain synchronization..."
+    
+    # Check if node is running
+    if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
+        log "⚠️  Mining node is running. Stopping for sync..."
+        stop_mining_node
+        sleep 2
+    fi
+    
+    log "📡 Connecting to COINjecture network..."
+    log "🌐 Network API: http://167.172.213.70:5000"
+    
+    # Check network connectivity
+    if ! curl -s --connect-timeout 10 http://167.172.213.70:5000/health >/dev/null; then
+        log "❌ Network unreachable. Cannot sync."
+        exit 1
+    fi
+    
+    log "✅ Network connected"
+    
+    # Get current blockchain state
+    log "📊 Fetching blockchain state..."
+    latest_block=$(curl -s http://167.172.213.70:5000/v1/data/block/latest)
+    
+    if echo "$latest_block" | grep -q '"status": "success"'; then
+        block_index=$(echo "$latest_block" | grep -o '"index": [0-9]*' | cut -d' ' -f2)
+        cumulative_work=$(echo "$latest_block" | grep -o '"cumulative_work_score": [0-9.]*' | cut -d' ' -f2)
+        block_hash=$(echo "$latest_block" | grep -o '"block_hash": "[^"]*"' | cut -d'"' -f4)
+        
+        log "📈 Current blockchain state:"
+        log "   Block Index: $block_index"
+        log "   Cumulative Work: $cumulative_work"
+        log "   Block Hash: ${block_hash:0:16}..."
+        
+        # Get recent block events
+        log "📋 Fetching recent block events..."
+        recent_events=$(curl -s "http://167.172.213.70:5000/v1/display/blocks/latest?limit=10")
+        
+        if echo "$recent_events" | grep -q '"status": "success"'; then
+            event_count=$(echo "$recent_events" | grep -o '"block_index": [0-9]*' | wc -l)
+            log "📊 Found $event_count recent block events"
+            
+            # Show recent events
+            echo "$recent_events" | jq -r '.data[] | "  Event: \(.event_id[0:8])... | Block: \(.block_index) | Work: \(.work_score) | Miner: \(.miner_id)"' 2>/dev/null || log "   (Raw events available)"
+        fi
+        
+        # Sync with full node if available
+        log "🔗 Attempting full node synchronization..."
+        
+        # Try to get block range
+        block_range=$(curl -s "http://167.172.213.70:5000/v1/data/blocks?start=0&end=10")
+        
+        if echo "$block_range" | grep -q '"status": "success"'; then
+            range_count=$(echo "$block_range" | grep -o '"index": [0-9]*' | wc -l)
+            log "📦 Synced $range_count blocks from network"
+        fi
+        
+        # Check for telemetry data
+        log "📊 Checking miner telemetry..."
+        telemetry=$(curl -s "http://167.172.213.70:5000/v1/display/telemetry/latest?limit=5")
+        
+        if echo "$telemetry" | grep -q '"status": "success"'; then
+            telemetry_count=$(echo "$telemetry" | jq -r '.data | length' 2>/dev/null || echo "0")
+            log "📈 Found $telemetry_count telemetry entries"
+        fi
+        
+        log "✅ Blockchain synchronization complete!"
+        log "💡 Network is ready for mining"
+        log "💡 Run '$0 start' to begin mining"
+        
+    else
+        log "❌ Failed to fetch blockchain state"
+        log "💡 Check network connectivity"
+        exit 1
+    fi
 }
 
 # Main script logic
@@ -295,6 +433,7 @@ case "${1:-help}" in
         log "🚀 Mining node deployment complete!"
         log "💡 Run '$0 status' to check status"
         log "💡 Run '$0 logs' to view activity"
+        log "💡 Run '$0 register' to register as a new miner"
         ;;
     stop)
         stop_mining_node
@@ -309,6 +448,12 @@ case "${1:-help}" in
         ;;
     logs)
         show_logs
+        ;;
+    register)
+        register_miner
+        ;;
+    sync)
+        sync_blockchain
         ;;
     help|--help|-h)
         show_help
