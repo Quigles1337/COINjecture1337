@@ -5,6 +5,22 @@ All notable changes to COINjecture will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.9.4] - 2025-10-17
+
+### Fixed
+- **IPFS Retrieve Method**: Fixed IPFSClient.get() method to use correct parameter format
+  - Changed from `data={'ipfs-path': cid}` to `files={'arg': (None, cid)}`
+  - Resolves 400 Bad Request errors when retrieving from IPFS
+  - Both upload and retrieve operations now functional
+  - Tested and deployed to DigitalOcean droplet
+
+### Technical Details
+- IPFS API requires form data with 'arg' parameter for cat command
+- Previous implementation used incorrect data format causing API errors
+- CLI ipfs-retrieve command now working properly
+- Mining nodes can now retrieve proof bundles from IPFS
+- All IPFS operations (upload, retrieve, status) fully functional
+
 ## [3.9.3] - 2025-10-17
 
 ### Added

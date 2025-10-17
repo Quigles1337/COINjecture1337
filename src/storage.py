@@ -148,8 +148,9 @@ class IPFSClient:
             raise Exception("requests library not available. Install with: pip install requests")
         
         try:
-            url = f"{self.api_url}/api/v0/cat?arg={cid}"
-            response = requests.get(url, timeout=self.timeout)
+            url = f"{self.api_url}/api/v0/cat"
+            files = {"arg": (None, cid)}
+            response = requests.post(url, files=files, timeout=self.timeout)
             response.raise_for_status()
             return response.content
         except Exception as e:
