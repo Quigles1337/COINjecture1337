@@ -81,6 +81,10 @@ class ConsensusService:
             # Initialize ingest store (use API server's database)
             self.ingest_store = IngestStore("/home/coinjecture/COINjecture/data/faucet_ingest.db")
             
+            # Bootstrap from existing blockchain state
+            if not self.bootstrap_from_cache():
+                logger.warning("Bootstrap failed, starting fresh")
+            
             logger.info("✅ Consensus service initialized")
             return True
             
@@ -88,12 +92,134 @@ class ConsensusService:
             logger.error(f"❌ Failed to initialize consensus service: {e}")
             return False
     
+    def bootstrap_from_cache(self):
+        """Bootstrap consensus engine with existing blockchain state."""
+        try:
+            # Check if blockchain state file exists
+            if os.path.exists(self.blockchain_state_path):
+                with open(self.blockchain_state_path, 'r') as f:
+                    blockchain_state = json.load(f)
+                
+                blocks = blockchain_state.get('blocks', [])
+                logger.info(f"Found {len(blocks)} blocks in blockchain state")
+                
+                # Add each block to consensus engine
+                for block_data in blocks:
+                    block = self._convert_cache_block_to_block(block_data)
+                    if block:
+                        # Add to block tree without validation
+                        self.consensus_engine._add_block_to_tree(block, receipt_time=block.timestamp)
+                        logger.info(f"Bootstrapped block #{block.index}")
+                
+                return True
+            else:
+                logger.info("No blockchain state found, starting from genesis")
+                return True
+        except Exception as e:
+            logger.error(f"Failed to bootstrap from cache: {e}")
+            return False
+    
+    def _convert_cache_block_to_block(self, block_data: Dict[str, Any]) -> Optional[Any]:
+        """Convert cached block data to Block object."""
+        try:
+            from core.blockchain import Block, ProblemTier, ComputationalComplexity, EnergyMetrics
+            
+            # Extract block data
+            block_index = block_data.get('index', 0)
+            timestamp = block_data.get('timestamp', time.time())
+            previous_hash = block_data.get('previous_hash', "0" * 64)
+            merkle_root = block_data.get('merkle_root', "0" * 64)
+            mining_capacity_str = block_data.get('mining_capacity', 'TIER_1_MOBILE')
+            cumulative_work_score = block_data.get('cumulative_work_score', 0.0)
+            block_hash = block_data.get('block_hash', '')
+            offchain_cid = block_data.get('offchain_cid', '')
+            
+            # Convert capacity string to ProblemTier
+            mining_capacity = ProblemTier.TIER_1_MOBILE
+            if "TIER_2_DESKTOP" in mining_capacity_str:
+                mining_capacity = ProblemTier.TIER_2_DESKTOP
+            elif "TIER_3_SERVER" in mining_capacity_str:
+                mining_capacity = ProblemTier.TIER_3_SERVER
+            
+            # Create basic problem and solution (placeholder for cached blocks)
+            problem = {
+                'type': 'subset_sum',
+                'numbers': [1, 2, 3, 4, 5],
+                'target': 10,
+                'size': 5
+            }
+            solution = [1, 2, 3, 4]
+            
+            # Create computational complexity with all required parameters
+            complexity = ComputationalComplexity(
+                "O(2^n)",  # time_solve_O
+                "O(2^n)",  # time_solve_Omega
+                None,       # time_solve_Theta
+                "O(n)",     # time_verify_O
+                "O(n)",     # time_verify_Omega
+                None,       # time_verify_Theta
+                "O(n * target)",  # space_solve_O
+                "O(n * target)",  # space_solve_Omega
+                None,       # space_solve_Theta
+                "O(n)",     # space_verify_O
+                "O(n)",     # space_verify_Omega
+                None,       # space_verify_Theta
+                "NP-Complete",  # problem_class
+                5,          # problem_size
+                4,          # solution_size
+                None,       # epsilon_approximation
+                2.0,        # asymmetry_time
+                1.0,        # asymmetry_space
+                cumulative_work_score / 1000,  # measured_solve_time
+                0.001,      # measured_verify_time
+                0,          # measured_solve_space
+                0,          # measured_verify_space
+                EnergyMetrics(
+                    solve_energy_joules=cumulative_work_score * 0.1,
+                    verify_energy_joules=0.001,
+                    solve_power_watts=100,
+                    verify_power_watts=1,
+                    solve_time_seconds=cumulative_work_score / 1000,
+                    verify_time_seconds=0.001,
+                    cpu_utilization=80.0,
+                    memory_utilization=50.0,
+                    gpu_utilization=0.0
+                ),  # energy_metrics
+                problem,    # problem
+                1.0         # solution_quality
+            )
+            
+            # Create Block object
+            block = Block(
+                index=block_index,
+                timestamp=timestamp,
+                previous_hash=previous_hash,
+                transactions=[f"Cached block {block_index}"],
+                merkle_root=merkle_root,
+                problem=problem,
+                solution=solution,
+                complexity=complexity,
+                mining_capacity=mining_capacity,
+                cumulative_work_score=cumulative_work_score,
+                block_hash=block_hash,
+                offchain_cid=offchain_cid
+            )
+            
+            return block
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to convert cache block to block: {e}")
+            return None
+    
     def process_block_events(self):
         """Process stored block events into blockchain blocks with λ-coupled timing."""
         try:
-            # Check λ-coupled timing
-            if not self.coupling_state.can_write():
-                return True  # Not time to write yet
+            # Always check for new events, but only write at λ-coupled intervals
+            # This allows continuous processing while respecting λ-coupling for writes
+            
+            # Get current chain length
+            current_chain = self.consensus_engine.get_chain_from_genesis()
+            current_tip_index = current_chain[-1].index if current_chain else -1
             
             # Get latest block events
             block_events = self.ingest_store.latest_blocks(limit=50)
@@ -101,9 +227,14 @@ class ConsensusService:
             processed_count = 0
             for event in block_events:
                 event_id = event.get('event_id', '')
+                event_block_index = event.get('block_index', 0)
                 
                 # Skip if already processed
                 if event_id in self.processed_events:
+                    continue
+                
+                # Skip events for blocks that are already in the chain
+                if event_block_index <= current_tip_index:
                     continue
                 
                 # Convert block event to Block object
@@ -128,6 +259,9 @@ class ConsensusService:
                     logger.info(f"📊 Block #{block.index}: {block.block_hash[:16]}...")
                     logger.info(f"⛏️  Work score: {block.cumulative_work_score}")
                     
+                    # Automatically distribute mining rewards
+                    self._distribute_mining_rewards(event, block)
+                    
                 except Exception as e:
                     logger.warning(f"⚠️  Failed to process block event {event_id}: {e}")
                     continue
@@ -135,15 +269,19 @@ class ConsensusService:
             if processed_count > 0:
                 logger.info(f"🔄 Processed {processed_count} new block events")
                 
-                # Update blockchain state
-                self._write_blockchain_state()
-                
-                # Record λ-coupled write
-                self.coupling_state.record_write()
-                
-                # Log coupling metrics
-                metrics = self.coupling_state.get_coupling_metrics()
-                logger.info(f"🔗 λ-coupling: {metrics['write_count']} writes, interval: {metrics['consensus_write_interval']:.2f}s")
+                # Only write blockchain state at λ-coupled intervals
+                if self.coupling_state.can_write():
+                    # Update blockchain state
+                    self._write_blockchain_state()
+                    
+                    # Record λ-coupled write
+                    self.coupling_state.record_write()
+                    
+                    # Log coupling metrics
+                    metrics = self.coupling_state.get_coupling_metrics()
+                    logger.info(f"🔗 λ-coupling: {metrics['write_count']} writes, interval: {metrics['consensus_write_interval']:.2f}s")
+                else:
+                    logger.info("⏳ Block events processed, waiting for λ-coupling interval to write state")
             
             return True
             
@@ -156,11 +294,8 @@ class ConsensusService:
         try:
             from core.blockchain import Block, ProblemTier, ComputationalComplexity, EnergyMetrics
             
-            # Extract event data
-            # Use sequential index instead of event's block_index
-            # Get current blockchain length to determine next index
-            current_chain_length = len(self.consensus_engine.get_chain_from_genesis())
-            block_index = current_chain_length  # Next sequential index
+            # Extract event data - use the event's own block_index
+            block_index = event.get('block_index', 0)
             
             block_hash = event.get('block_hash', '')
             cid = event.get('cid', '')
@@ -224,12 +359,8 @@ class ConsensusService:
                 1.0         # solution_quality
             )
             
-            # Get previous hash from consensus engine
-            previous_hash = "0" * 64  # Genesis
-            if block_index > 0:
-                best_tip = self.consensus_engine.get_best_tip()
-                if best_tip:
-                    previous_hash = best_tip.block_hash
+            # Use the previous hash from the event data
+            previous_hash = event.get('previous_hash', "0" * 64)
             
             # Create Block object
             block = Block(
@@ -307,6 +438,39 @@ class ConsensusService:
             
         except Exception as e:
             logger.error(f"❌ Failed to write blockchain state: {e}")
+    
+    def _distribute_mining_rewards(self, event: Dict[str, Any], block: Any):
+        """Automatically distribute mining rewards to the miner."""
+        try:
+            miner_address = event.get('miner_address', '')
+            work_score = event.get('work_score', 0.0)
+            
+            if not miner_address:
+                logger.warning("⚠️  No miner address found for reward distribution")
+                return
+            
+            # Calculate rewards (same as API: 50 COIN base + 0.1 COIN per work score)
+            base_reward = 50.0
+            work_bonus = work_score * 0.1
+            total_reward = base_reward + work_bonus
+            
+            # Log reward distribution
+            logger.info(f"💰 Distributing mining rewards to {miner_address}")
+            logger.info(f"   Base reward: {base_reward} COIN")
+            logger.info(f"   Work bonus: {work_bonus:.2f} COIN (work score: {work_score})")
+            logger.info(f"   Total reward: {total_reward:.2f} COIN")
+            
+            # TODO: Implement actual token transfer to miner's wallet
+            # This would involve:
+            # 1. Creating a transaction from network to miner
+            # 2. Adding it to the blockchain state
+            # 3. Updating miner's balance
+            
+            # For now, just log the reward calculation
+            logger.info(f"🎉 Mining rewards calculated for {miner_address}: {total_reward:.2f} COIN")
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to distribute mining rewards: {e}")
     
     def run(self):
         """Main consensus service loop with λ-coupled timing."""

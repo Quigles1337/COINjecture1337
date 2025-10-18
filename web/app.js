@@ -497,6 +497,7 @@ class WebInterface {
       const blockData = {
         block_hash: blockHash,
         block_index: currentBlock.index + 1,
+        previous_hash: currentBlock.block_hash, // Use current blockchain tip as previous hash
         capacity: tier.toUpperCase(),
         cid: cid,
         event_id: `web-mining-${Date.now()}-${tier}`,

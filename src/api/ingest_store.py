@@ -90,13 +90,14 @@ class IngestStore:
                 cur = conn.cursor()
                 cur.execute(
                     """
-                    INSERT INTO block_events(event_id, block_index, block_hash, cid, miner_address, capacity, work_score, ts, sig, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO block_events(event_id, block_index, block_hash, previous_hash, cid, miner_address, capacity, work_score, ts, sig, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         ev["event_id"],
                         int(ev["block_index"]),
                         ev["block_hash"],
+                        ev.get("previous_hash", "0" * 64),
                         ev["cid"],
                         ev["miner_address"],
                         ev["capacity"],
