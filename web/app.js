@@ -470,8 +470,13 @@ class WebInterface {
       // Create data to sign (same as blockData, without signature/public_key)
       const dataToSign = { ...blockData };
       
-      // Create canonical JSON (sorted keys like backend expects)
-      const canonicalJson = JSON.stringify(dataToSign, Object.keys(dataToSign).sort());
+      // Create canonical JSON with sorted keys (matching backend json.dumps(block_data, sort_keys=True))
+      const sortedKeys = Object.keys(dataToSign).sort();
+      const sortedData = {};
+      sortedKeys.forEach(key => {
+        sortedData[key] = dataToSign[key];
+      });
+      const canonicalJson = JSON.stringify(sortedData);
       const dataBuffer = new TextEncoder().encode(canonicalJson);
       
       // Debug: Log what we're signing
