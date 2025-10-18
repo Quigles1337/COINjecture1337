@@ -479,10 +479,6 @@ class WebInterface {
       const canonicalJson = JSON.stringify(sortedData);
       const dataBuffer = new TextEncoder().encode(canonicalJson);
       
-      // Debug: Log what we're signing
-      console.log('Data being signed:', canonicalJson);
-      console.log('Public key:', publicKey);
-      console.log('Public key length:', publicKey.length);
       
       // Create Ed25519 signature that matches backend expectations
       const signatureBuffer = await crypto.subtle.sign("Ed25519", keyPair.privateKey, dataBuffer);
@@ -490,13 +486,11 @@ class WebInterface {
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
       
-      console.log('Ed25519 Signature:', signature);
-      console.log('Signature length:', signature.length);
-      console.log('Signature buffer length:', signatureBuffer.byteLength);
       
       // Add signature and public_key to the block data
       blockData.signature = signature;
       blockData.public_key = publicKey;
+      
       
       const submitResponse = await fetch(`${this.apiBase}/v1/ingest/block`, {
         method: 'POST',
@@ -642,11 +636,8 @@ class WebInterface {
           ["sign"]
         );
         
-        // Recreate public key from private key
-        const publicKeyBuffer = await crypto.subtle.exportKey("raw", privateKey);
-        const publicKey = Array.from(new Uint8Array(publicKeyBuffer))
-          .map(b => b.toString(16).padStart(2, '0'))
-          .join('');
+        // Load public key directly from stored wallet data
+        const publicKey = walletData.publicKey;
         
         const wallet = {
           address: walletData.address,

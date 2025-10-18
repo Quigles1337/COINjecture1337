@@ -5,6 +5,33 @@ All notable changes to COINjecture will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.9.9] - 2025-10-18
+
+### Fixed
+- **Web Wallet Ed25519 Signature Verification**: Fixed signature verification in web interface
+  - Web interface now stores both private_key and public_key separately in localStorage
+  - Removed incorrect public key derivation from PKCS8 private key during wallet loading
+  - Public key is now loaded directly from stored wallet data
+  - Signatures now verify successfully on backend, resolving 401 "Invalid signature" errors
+
+### Technical Details
+- **Wallet Storage**: Matches backend `src/tokenomics/wallet.py` architecture
+- **Key Management**: Both private_key and public_key stored as hex strings in localStorage
+- **Signature Generation**: Uses Ed25519 private key for signing, public key for verification
+- **Privacy Protection**: Private key never leaves browser, only used for client-side signing
+- **Zero-Knowledge Architecture**: Public identity layer (device fingerprint) separate from cryptographic keys
+
+### Files Modified
+- `web/app.js` - Fixed wallet loading to use stored public key instead of deriving from private key
+- `src/api/faucet_server.py` - Removed debug logging from signature verification
+- Deployed to DigitalOcean droplet with nginx serving web interface
+
+### Testing Results
+- Web interface accessible at http://167.172.213.70/
+- API endpoints working correctly through nginx proxy
+- Wallet signature verification now passes backend validation
+- Web miners can successfully submit blocks and receive token rewards
+
 ## [3.9.8] - 2025-01-27
 
 ### Fixed
