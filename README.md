@@ -3,8 +3,15 @@
 > Built on Satoshi's foundation. Evolved with complexity theory. Driven by real-world utility. Every pro
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-3.9.15-blue.svg)](https://github.com/beanapologist/COINjecture)
+[![Version](https://img.shields.io/badge/version-3.9.18-blue.svg)](https://github.com/beanapologist/COINjecture)
 [![Status](https://img.shields.io/badge/status-live-green.svg)](http://167.172.213.70:5000)
+[![v4.0 Coming Soon](https://img.shields.io/badge/v4.0-Time%20Crystal%20Revolution-purple.svg)](V4_ROADMAP.md)
+
+## 🌟 v4.0 Coming Soon: The Time Crystal Revolution
+
+**COINjecture v4.0** represents a **fundamental breakthrough** in blockchain technology - the first blockchain to operate as a **discrete time crystal**. By achieving λ-η equilibrium at 1/√2, the network breaks time-translation symmetry, enabling mobile devices to mine with datacenter efficiency through temporal coherence.
+
+**[🚀 Read the V4 Roadmap](V4_ROADMAP.md)** | **[📱 Release Notes](.github/RELEASE_NOTES_v4.0.md)** | **[💬 Join Discussion](.github/DISCUSSIONS/v4_vision.md)**
 
 ## Overview
 
