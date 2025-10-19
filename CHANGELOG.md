@@ -5,6 +5,29 @@ All notable changes to COINjecture will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.9.30] - 2025-10-19
+
+### 🔧 Wallet Display & Mining Rewards Fix
+- **Wallet Address Consistency**: Fixed wallet-balance command to show correct address from config/miner_wallet.json
+- **Mining Rewards Integration**: Updated web interface to use configured wallet address for all mining operations
+- **Blockchain Address Recording**: Ensured mining rewards are permanently recorded with correct wallet address
+- **Frontend-Backend Sync**: Web interface now consistently uses BEANSa93eefd297ae59e963d0977319690ffbc55e2b33 for all operations
+- **Address Utilities**: Created src/tokenomics/address_utils.py for wallet address management and validation
+
+### 🎯 Technical Implementation
+- **CLI Fix**: Removed duplicate wallet-balance command implementation in src/cli.py
+- **Web Interface Update**: Modified web/app.js to use configured address for mining and rewards tracking
+- **Mining Scripts**: Updated P2P mining scripts to use real wallet addresses instead of "mining-service"
+- **API Integration**: All rewards API calls now use the configured wallet address
+- **Deployment**: Successfully deployed changes to droplet and restarted services
+
+### 📊 Wallet System Improvements
+- **Consistent Address Display**: wallet-balance now shows BEANSa93eefd297ae59e963d0977319690ffbc55e2b33
+- **Mining Rewards**: All mining operations now use the configured wallet address
+- **Blockchain Records**: New blocks are permanently recorded with correct miner address
+- **No More Placeholders**: Eliminated "mining-service" placeholder in favor of real wallet addresses
+- **Unified Operations**: Mining, rewards tracking, and display all use the same wallet address
+
 ## [3.9.29] - 2025-10-19
 
 ### 🌐 Full Blockchain Sync & Network Analysis
