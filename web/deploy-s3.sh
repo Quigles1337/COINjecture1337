@@ -17,7 +17,7 @@ echo "Apply CORS"
 aws s3api put-bucket-cors --bucket "$BUCKET_NAME" --cors-configuration file://cors.json
 
 echo "Sync web/ to bucket"
-aws s3 sync . s3://"$BUCKET_NAME"/ --delete --acl public-read
+aws s3 sync . s3://"$BUCKET_NAME"/ --delete
 
 echo "Done. Website endpoint is listed in the S3 console for bucket $BUCKET_NAME"
 
