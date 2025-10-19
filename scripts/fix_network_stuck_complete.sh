@@ -205,7 +205,7 @@ class MiningService:
                 "block_index": 167,  # Force beyond 166
                 "block_hash": f"mined_{int(time.time())}_{hashlib.md5(str(solution).encode()).hexdigest()[:8]}",
                 "cid": f"QmMined{int(time.time())}",
-                "miner_address": "mining-service",
+                "miner_address": "BEANSa93eefd297ae59e963d0977319690ffbc55e2b33",
                 "capacity": "DESKTOP",
                 "work_score": len(solution) * 100.0,  # Work score based on solution size
                 "ts": time.time(),

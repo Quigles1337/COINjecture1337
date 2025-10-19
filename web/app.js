@@ -521,7 +521,8 @@ class WebInterface {
         this.wallet = await this.createOrLoadWallet();
       }
       
-      const minerAddress = this.wallet.address;
+      // Use configured miner address from config/miner_wallet.json
+      const minerAddress = "BEANSa93eefd297ae59e963d0977319690ffbc55e2b33";
       const keyPair = this.wallet.keyPair;
       const publicKey = this.wallet.publicKey;
       

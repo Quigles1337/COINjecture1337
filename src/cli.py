@@ -458,13 +458,7 @@ Examples:
         )
         list_parser.set_defaults(func=self._handle_wallet_list)
         
-        # Get balance
-        balance_parser = subparsers.add_parser(
-            'wallet-balance',
-            help='Get wallet balance'
-        )
-        balance_parser.add_argument('address', help='Wallet address')
-        balance_parser.set_defaults(func=self._handle_wallet_balance)
+        # Get balance - removed duplicate, using _add_wallet_balance_command instead
     
     def _add_transaction_commands(self, subparsers):
         """Add transaction command parsers."""
@@ -1333,18 +1327,7 @@ Examples:
             print(f"❌ Error listing wallets: {e}")
             return 1
     
-    def _handle_wallet_balance(self, args) -> int:
-        """Handle wallet balance check."""
-        try:
-            from tokenomics.blockchain_state import BlockchainState
-            state = BlockchainState()
-            
-            balance = state.get_balance(args.address)
-            print(f"💰 Balance for {args.address}: {balance:.6f} coins")
-            return 0
-        except Exception as e:
-            print(f"❌ Error checking balance: {e}")
-            return 1
+    # Removed duplicate _handle_wallet_balance method - using the one at line 2160
     
     def _handle_transaction_send(self, args) -> int:
         """Handle transaction sending."""
