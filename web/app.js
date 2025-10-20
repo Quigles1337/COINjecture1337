@@ -820,9 +820,6 @@ class WebInterface {
                  event_id: `mining-${timestamp}-${this.wallet.address.substring(0, 8)}`,
                  block_index: 5286, // Current blockchain height + 1
                  block_hash: `mined_${timestamp}_${Math.random().toString(36).substring(2, 10)}`,
-                 previous_hash: '0' + Math.random().toString(16).substring(2, 64), // Generate random previous hash
-                 merkle_root: Math.random().toString(16).substring(2, 64), // Generate random merkle root
-                 timestamp: timestamp,
                  cid: `QmMined${timestamp}`,
                  miner_address: this.wallet.address,
                  capacity: tier === 'mobile' ? 'mobile' : tier === 'desktop' ? 'desktop' : 'server',
