@@ -40,6 +40,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **API Compatibility**: Mining requests now include all required fields for successful submission
 - **S3 Deployment**: Updated frontend with complete mining data structure
 
+## [3.9.55] - 2025-10-20
+
+### 🔧 Mining 422 Error Fix
+- **422 Error Resolution**: Fixed mining command 422 (Unprocessable Content) errors
+- **Missing Fields**: Added required fields (previous_hash, merkle_root, timestamp) to mining payload
+- **API Compatibility**: Mining requests now include all required fields for successful submission
+- **S3 Deployment**: Updated frontend with complete mining data structure
+- **Frontend Update**: Deployed fixed app.js to S3 with proper mining data structure
+- **API Validation**: Mining requests now pass API validation (no more 422 errors)
+- **Complete Payload**: All 13 required fields now included in mining requests
+
 ## [3.9.53] - 2025-10-20
 
 ### 🎯 Critical Consensus Engine Fixes
