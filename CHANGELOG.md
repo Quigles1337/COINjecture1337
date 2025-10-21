@@ -1,8 +1,14 @@
 # Changelog
 
-## [3.10.2] - 2025-10-21
+## [3.10.4] - 2025-10-21
 
 ### Major Features
+- **Critical Data Synchronization Fix**: Fixed major data synchronization issue showing correct blockchain data (14,600+ blocks instead of 8,475)
+- **Consensus Service Integration**: API now reads from consensus service instead of outdated database/JSON files
+- **Real Network Statistics**: Both /v1/peers and /health endpoints now show accurate 14,600+ block count
+- **Cache Synchronization Fix**: Fixed critical cache synchronization issue showing real blockchain data
+- **Database-Driven Cache**: Cache manager now reads from consensus service instead of outdated JSON files
+- **Real P2P Network Data**: Updated /v1/peers endpoint to show actual mining network with 15 active miners
 - **Wallet Persistence System**: Complete backend wallet registry with Ed25519 cryptographic wallets
 - **IPFS Data Access**: Full IPFS data retrieval system for user computational work
 - **Real Cryptographic Wallets**: Replaced demo wallets with proper Ed25519 key generation
@@ -24,6 +30,8 @@
 - **Gateway URLs**: Multiple IPFS gateway access points for data retrieval
 
 ### API Enhancements
+- **Critical Data Fix**: Fixed major data synchronization showing 14,600+ blocks instead of 8,475
+- **Consensus Service Integration**: All endpoints now read from consensus service for accurate data
 - **Missing Endpoints**: Added `/v1/peers` endpoint for network peer information
 - **Rate Limiting**: Proper rate limits for all endpoints (10-100 requests/minute)
 - **Error Handling**: Improved error responses and status codes
