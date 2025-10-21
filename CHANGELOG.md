@@ -1,5 +1,25 @@
 # Changelog
 
+## [3.9.69] - 2025-10-21
+
+### Fixed
+- **Mobile Consensus Sync**: Fixed mobile mining proof submission to consensus engine
+- **API Endpoint Conflict**: Resolved duplicate `/v1/ingest/block` endpoints causing mobile submissions to hit wrong endpoint
+- **Consensus Processing**: Mobile mining blocks now properly sync to consensus service for processing
+- **Endpoint Routing**: CLI clients now use `/v1/ingest/block/cli` while mobile uses `/v1/ingest/block`
+
+### Technical Details
+- Removed duplicate API endpoint that was overriding mobile submissions
+- Mobile version now hits correct endpoint that processes BlockEvent format
+- CLI clients redirected to separate endpoint with different data structure
+- Consensus service can now properly process mobile mining submissions
+
+### Resolved Issues
+- ✅ Mobile mining blocks now sync to consensus engine
+- ✅ Proof submissions properly processed by consensus service
+- ✅ No more endpoint conflicts between mobile and CLI
+- ✅ Mobile mining rewards properly distributed
+
 ## [3.9.68] - 2025-10-21
 
 ### Fixed

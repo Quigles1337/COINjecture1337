@@ -1,3 +1,13 @@
+#!/bin/bash
+set -e
+
+echo "🔧 Fixing mobile mining consensus sync..."
+
+# Backup current file
+cp /home/coinjecture/COINjecture/src/api/faucet_server.py /home/coinjecture/COINjecture/src/api/faucet_server.py.backup
+
+# Write updated content
+cat > /home/coinjecture/COINjecture/src/api/faucet_server.py << 'EOF'
 """
 COINjecture Faucet API Server
 
@@ -995,3 +1005,20 @@ if __name__ == "__main__":
     # Create and run API server
     api = FaucetAPI()
     api.run(debug=True)
+
+EOF
+
+echo "✅ Updated faucet_server.py"
+
+# Restart the API server
+echo "🔄 Restarting API server..."
+sudo systemctl restart coinjecture-api || echo "⚠️  systemctl restart failed, trying manual restart..."
+
+# Try alternative restart method
+pkill -f "python.*faucet_server.py" || echo "No existing process found"
+cd /home/coinjecture/COINjecture
+nohup python3 src/api/faucet_server.py > logs/api_server.log 2>&1 &
+echo $! > logs/api_server.pid
+
+echo "✅ API server restarted"
+echo "🎉 Mobile consensus sync fix deployed!"
