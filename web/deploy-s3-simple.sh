@@ -12,7 +12,7 @@ echo "Enable website hosting"
 aws s3 website s3://"$BUCKET_NAME"/ --index-document index.html --error-document index.html
 
 echo "Sync web/ to bucket"
-aws s3 sync . s3://"$BUCKET_NAME"/ --delete
+aws s3 sync web/ s3://"$BUCKET_NAME"/ --delete
 
 echo "Invalidating CloudFront cache to serve latest version"
 aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" --paths "/*"

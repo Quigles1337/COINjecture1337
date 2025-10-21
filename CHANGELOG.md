@@ -1,5 +1,25 @@
 # Changelog
 
+## [3.9.67] - 2025-10-21
+
+### Fixed
+- **S3 Website Structure**: Fixed S3 bucket file structure - files were in web/ subdirectory instead of root
+- **404 Error**: Resolved "NoSuchKey" error for index.html by copying files to S3 bucket root
+- **Deployment Scripts**: Fixed deployment scripts to sync web/ directory instead of entire project
+- **CloudFront Cache**: Invalidated CloudFront cache to serve updated files
+
+### Technical Details
+- Copied index.html, app.js, and style.css from web/ to S3 bucket root
+- Updated web/deploy-s3.sh and web/deploy-s3-simple.sh to sync web/ directory
+- CloudFront cache invalidation to serve latest files
+- S3 website now properly serves index.html from root
+
+### Resolved Issues
+- ✅ S3 website now loads index.html correctly
+- ✅ No more 404 errors for missing files
+- ✅ Deployment scripts fixed to prevent future issues
+- ✅ CloudFront serving updated content
+
 ## [3.9.66] - 2025-10-21
 
 ### Fixed
