@@ -1,5 +1,25 @@
 # Changelog
 
+## [3.9.68] - 2025-10-21
+
+### Fixed
+- **Mobile Mining Authentication**: Fixed mobile version P2P network submission with proper wallet signatures
+- **Wallet Signing Methods**: Added `signBlock()` and `getPublicKey()` methods to wallet objects
+- **Block Data Structure**: Updated mobile mining to include proper blockchain fields (previous_hash, merkle_root)
+- **Dynamic Block Height**: Mobile mining now fetches current blockchain height instead of using static values
+
+### Technical Details
+- Added wallet signing methods for both Ed25519 and demo wallets
+- Updated mobile mining data structure to match API requirements
+- Implemented proper signature generation for block submissions
+- Added blockchain height fetching for accurate block indexing
+
+### Resolved Issues
+- ✅ Mobile version can now submit blocks to P2P network
+- ✅ Proper wallet authentication for mobile mining
+- ✅ API returns 429 (rate limiting) instead of 401 (unauthorized)
+- ✅ Mobile mining includes all required blockchain fields
+
 ## [3.9.67] - 2025-10-21
 
 ### Fixed

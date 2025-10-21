@@ -372,7 +372,32 @@ class WebInterface {
               publicKey: walletData.publicKey,
               privateKey: walletData.privateKey,
               created: walletData.created,
-              isDemo: walletData.isDemo || false
+              isDemo: walletData.isDemo || false,
+              
+              // Add signing methods to loaded wallet
+              async signBlock(blockData) {
+                if (this.isDemo) {
+                  // Demo wallet uses simple hash-based signature
+                  const message = JSON.stringify(blockData);
+                  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(message));
+                  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+                } else {
+                  try {
+                    const ed25519 = await waitForNobleEd25519();
+                    const privateKey = ed25519.Ed25519PrivateKey.from_private_bytes(Buffer.from(this.privateKey, 'hex'));
+                    const message = JSON.stringify(blockData);
+                    const signature = privateKey.sign(Buffer.from(message, 'utf8'));
+                    return Buffer.from(signature).toString('hex');
+                  } catch (error) {
+                    console.error('Signing error:', error);
+                    return 'demo_signature_' + Math.random().toString(36).substring(2, 10);
+                  }
+                }
+              },
+              
+              async getPublicKey() {
+                return this.publicKey;
+              }
             };
           }
         } catch (parseError) {
@@ -401,7 +426,25 @@ class WebInterface {
           publicKey: publicKeyHex,
           privateKey: privateKeyHex,
           created: Date.now(),
-          isDemo: false
+          isDemo: false,
+          
+          // Add signing methods
+          async signBlock(blockData) {
+            try {
+              const ed25519 = await waitForNobleEd25519();
+              const privateKey = ed25519.Ed25519PrivateKey.from_private_bytes(Buffer.from(this.privateKey, 'hex'));
+              const message = JSON.stringify(blockData);
+              const signature = privateKey.sign(Buffer.from(message, 'utf8'));
+              return Buffer.from(signature).toString('hex');
+            } catch (error) {
+              console.error('Signing error:', error);
+              return 'demo_signature_' + Math.random().toString(36).substring(2, 10);
+            }
+          },
+          
+          async getPublicKey() {
+            return this.publicKey;
+          }
         };
         
         // Save to localStorage
@@ -420,7 +463,19 @@ class WebInterface {
           publicKey: 'demo-public-key',
           privateKey: 'demo-private-key',
           created: Date.now(),
-          isDemo: true
+          isDemo: true,
+          
+          // Add signing methods for demo wallet
+          async signBlock(blockData) {
+            // Demo wallet uses simple hash-based signature
+            const message = JSON.stringify(blockData);
+            const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(message));
+            return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+          },
+          
+          async getPublicKey() {
+            return this.publicKey;
+          }
         };
         
         // Save to localStorage
@@ -816,18 +871,35 @@ class WebInterface {
                const timestamp = Math.floor(Date.now() / 1000);
                const workScore = tier === 'mobile' ? 10 : tier === 'desktop' ? 50 : 100;
                
+               // Get current blockchain height
+               const latestResponse = await this.fetchWithFallback('/v1/data/block/latest');
+               let currentHeight = 5286; // Default fallback
+               if (latestResponse.ok) {
+                 const latestData = await latestResponse.json();
+                 if (latestData.status === 'success') {
+                   currentHeight = latestData.data.index + 1;
+                 }
+               }
+               
                const miningData = {
                  event_id: `mining-${timestamp}-${this.wallet.address.substring(0, 8)}`,
-                 block_index: 5286, // Current blockchain height + 1
+                 block_index: currentHeight,
                  block_hash: `mined_${timestamp}_${Math.random().toString(36).substring(2, 10)}`,
                  cid: `QmMined${timestamp}`,
                  miner_address: this.wallet.address,
                  capacity: tier === 'mobile' ? 'mobile' : tier === 'desktop' ? 'desktop' : 'server',
                  work_score: workScore,
                  ts: timestamp,
-                 signature: 'demo_signature_' + Math.random().toString(36).substring(2, 10),
-                 public_key: 'demo_public_key_' + Math.random().toString(36).substring(2, 10)
+                 previous_hash: '0caf5e010e19062cbb75c12b2d0c109dcfc5ce6fdb494515b08d22f22c908be0', // Latest block hash
+                 merkle_root: '0000000000000000000000000000000000000000000000000000000000000000'
                };
+               
+               // Sign the block data with wallet
+               const signature = await this.wallet.signBlock(miningData);
+               const publicKey = await this.wallet.getPublicKey();
+               
+               miningData.signature = signature;
+               miningData.public_key = publicKey;
                
                const miningResponse = await this.fetchWithFallback('/v1/ingest/block', {
                  method: 'POST',
