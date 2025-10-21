@@ -1,5 +1,111 @@
 # Changelog
 
+## [3.10.1] - 2025-10-21
+
+### Critical Bug Fixes
+- **Fixed Rewards Calculation**: Implemented proper dynamic tokenomics instead of static 100 BEANS per block
+- **Frontend Error Handling**: Fixed "cannot read properties of undefined" errors in blockchain stats
+- **Block Hash Display**: Corrected frontend to properly display block hashes from API responses
+- **0.707 Critical Damping**: Implemented λ = η = 1/√2 optimization for consensus processing
+- **Rewards Recalculation**: Migrated all existing rewards to dynamic tokenomics system
+
+### Performance Optimizations
+- **Critical Damping**: Applied 0.707 mathematical optimization to consensus processing intervals
+- **Coupling State**: Added λ-η equilibrium tracking for optimal processing timing
+- **Memory Efficiency**: Improved consensus service memory usage and processing speed
+- **Dynamic Processing**: Processing intervals now adapt to network state using critical damping
+
+### Frontend Improvements
+- **Safe Field Access**: Added null checks for all block hash and blockchain data fields
+- **Error Prevention**: Prevents undefined property access errors in blockchain statistics
+- **Better UX**: Shows "N/A" instead of crashing when data is missing
+- **Robust Display**: Multiple fallback options for block hash display
+
+### Rewards System Overhaul
+- **Dynamic Tokenomics**: Rewards now calculated using `log(1 + work_ratio) × deflation_factor × diversity_bonus`
+- **Realistic Values**: Average rewards now ~0.65 BEANS per block instead of 100 BEANS
+- **Work-Based**: Rewards based on actual computational work contribution
+- **Natural Deflation**: Deflation factor decreases as cumulative work grows
+- **Diversity Incentives**: Bonuses for underrepresented mining capacities
+
+### Database Fixes
+- **Rewards Migration**: All existing rewards recalculated with dynamic tokenomics
+- **Data Integrity**: Fixed static reward values in work_based_rewards table
+- **Proper Calculation**: 433 mining events recalculated with correct formula
+- **Summary Statistics**: Total rewards now 289.82 BEANS (vs 50,000+ static)
+
+### Technical Improvements
+- **Mathematical Precision**: 0.707 critical damping for optimal consensus convergence
+- **Coupling Constants**: λ = η = 1/√2 ≈ 0.7071 for marginal stability boundary
+- **Processing Optimization**: Optimal processing intervals based on critical damping
+- **Network Stability**: Improved consensus stability through mathematical optimization
+
+## [3.10.0] - 2025-10-21
+
+### Major Architecture Improvements
+- **Object-Oriented Design**: Complete refactor to object-oriented architecture for all consensus components
+- **Wallet Persistence**: Implemented BIP39 mnemonic generation and recovery for wallet continuity
+- **Zero-Knowledge Proofs**: Added lightweight ZK proof of ownership in wallet system
+- **Dynamic Tokenomics**: Migrated to proper dynamic work score tokenomics system
+- **Stop Mining Command**: Added `stop-mining` command to frontend CLI
+
+### New Objects and Classes
+- **MiningEvent**: Represents mining events with all necessary data
+- **BlockchainBlock**: Represents blockchain blocks with complete metadata
+- **ComplexityFactory**: Factory for creating ComputationalComplexity objects
+- **RewardsCalculator**: Handles reward calculations using dynamic tokenomics
+- **DatabaseManager**: Manages database operations for rewards and blockchain state
+- **BlockchainManager**: Manages blockchain state and operations
+- **P2PDiscoveryManager**: Manages P2P network discovery
+- **ObjectOrientedConsensusService**: Main consensus service using OOP architecture
+
+### Wallet System Enhancements
+- **BIP39 Mnemonic Generation**: 12-word recovery phrases for wallet backup
+- **Wallet Recovery**: Import wallets from recovery phrases
+- **Wallet Export**: Export recovery phrases securely
+- **Wallet Backup**: Download wallet backup files
+- **ZK Proof of Ownership**: Prove wallet ownership without revealing private keys
+
+### Dynamic Tokenomics Implementation
+- **Work-Based Rewards**: Rewards calculated based on actual computational work
+- **Deflation Factor**: Natural deflation as cumulative work grows
+- **Diversity Bonuses**: Bonuses for underrepresented mining capacities
+- **Logarithmic Scaling**: Rewards scale logarithmically with work ratio
+- **Migration Script**: Migrate all existing rewards to dynamic tokenomics
+
+### Frontend CLI Improvements
+- **New Commands**: `wallet-export`, `wallet-import`, `wallet-backup`, `stop-mining`
+- **Enhanced Help**: Updated help system with all new commands
+- **Wallet Recovery**: Full wallet recovery and backup functionality
+- **Mining Control**: Start and stop mining with proper feedback
+
+### Technical Improvements
+- **Proper Object Creation**: All components now use proper object instantiation
+- **Type Safety**: Added type hints and proper data structures
+- **Error Handling**: Comprehensive error handling in all object methods
+- **Separation of Concerns**: Clear separation between different system components
+- **Factory Pattern**: Used factory pattern for complex object creation
+
+### API Enhancements
+- **Dynamic Tokenomics Data**: API now shows tokenomics version and formula
+- **Reward Explanations**: Detailed explanations of reward calculations
+- **Enhanced Responses**: More informative API responses with context
+
+### Database Improvements
+- **Thread Safety**: Fixed SQLite threading issues with WAL mode
+- **Reward Tracking**: Proper tracking of dynamic tokenomics rewards
+- **Migration Support**: Support for migrating from old to new reward systems
+
+### Resolved Issues
+- ✅ All components now use proper object-oriented design
+- ✅ Wallet persistence with BIP39 mnemonic recovery
+- ✅ Dynamic tokenomics properly implemented
+- ✅ ZK proof of ownership for wallet security
+- ✅ Stop mining command added to frontend
+- ✅ Consensus service uses proper object architecture
+- ✅ Database operations properly encapsulated
+- ✅ P2P discovery managed as object
+
 ## [3.9.70] - 2025-10-21
 
 ### Fixed
