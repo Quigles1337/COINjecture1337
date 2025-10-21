@@ -56,7 +56,7 @@ class FaucetAPI:
         
         # Enable CORS for browser access
         CORS(self.app, 
-            origins=["https://coinjecture.com", "https://api.coinjecture.com"],
+            origins=["https://coinjecture.com", "https://api.coinjecture.com", "https://d3srwqcuj8kw0l.cloudfront.net"],
             methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             allow_headers=["Content-Type", "Authorization", "X-User-ID", "X-Timestamp", "X-Signature"],
             supports_credentials=True)

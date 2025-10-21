@@ -1,5 +1,18 @@
 # Changelog
 
+## [3.9.64] - 2025-10-21
+
+### Fixed
+- **FIXED**: CORS policy for new CloudFront distribution domain
+- **RESOLVED**: CORS blocking requests from d3srwqcuj8kw0l.cloudfront.net
+- **UPDATED**: API CORS configuration to allow new CloudFront domain
+
+### Technical Details
+- Added `https://d3srwqcuj8kw0l.cloudfront.net` to CORS origins
+- API now accepts requests from new CloudFront distribution
+- CORS preflight requests working correctly (200 OK)
+- Frontend can now communicate with API from new domain
+
 ## [3.9.63] - 2025-10-21
 
 ### Fixed
