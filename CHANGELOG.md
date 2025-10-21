@@ -1,5 +1,23 @@
 # Changelog
 
+## [3.9.66] - 2025-10-21
+
+### Fixed
+- **Frontend Consensus Display**: Fixed frontend consensus status display in header
+- **API Field Mapping**: Updated frontend to use correct API field names (`latest_block_index` instead of `processed_blocks`)
+- **Real-time Consensus Status**: Frontend now shows accurate consensus progress (10,562/10,562 blocks = 100%)
+
+### Technical Details
+- Updated `web/app.js` consensus status parsing logic
+- Fixed field name mismatch between frontend and API response
+- Frontend now correctly displays consensus progress percentage
+- Deployed updated frontend with CloudFront cache invalidation
+
+### Resolved Issues
+- ✅ Frontend header now shows real-time consensus status instead of static value
+- ✅ Consensus progress percentage displays correctly (100% when complete)
+- ✅ API and frontend data sources properly synchronized
+
 ## [3.9.65] - 2025-10-21
 
 ### Fixed

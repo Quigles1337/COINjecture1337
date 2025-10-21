@@ -1858,7 +1858,7 @@ class WebInterface {
           const consensusData = await consensusResponse.json();
           if (consensusData.status === 'success') {
             const consensus = consensusData.data;
-            const processed = consensus.processed_blocks || 0;
+            const processed = consensus.latest_block_index || 0;
             const total = consensus.total_blocks || 0;
             const progress = total > 0 ? Math.round((processed / total) * 100) : 0;
             statusText += ` | ⚙️ Consensus: ${processed}/${total} (${progress}%)`;
