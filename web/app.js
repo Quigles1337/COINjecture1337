@@ -165,11 +165,13 @@ class WebInterface {
         // Navigation
         this.navLinks.forEach(link => {
       link.addEventListener('click', (e) => {
-        e.preventDefault();
-                const page = link.dataset.page;
-                if (page) {
-                    this.showPage(page);
-                }
+        const page = link.dataset.page;
+        if (page) {
+          e.preventDefault();
+          this.showPage(page);
+        }
+        // For external links (like data-marketplace.html), let the browser handle them naturally
+        // Don't prevent default for links without data-page attribute
       });
     });
   }
@@ -300,10 +302,254 @@ class WebInterface {
             case 'explorer':
                 blockchainExplorer.activate();
                 break;
+            case 'marketplace':
+                this.initializeMarketplace();
+                break;
             default:
                 metricsDashboard.deactivate();
                 blockchainExplorer.deactivate();
                 break;
+        }
+    }
+
+    async initializeMarketplace() {
+        console.log('🏪 Initializing Data Marketplace...');
+        
+        try {
+            // Load live statistics
+            await this.loadMarketplaceStats();
+            
+            // Setup API demo
+            this.setupApiDemo();
+            
+            console.log('✅ Data Marketplace initialized successfully');
+        } catch (error) {
+            console.error('❌ Failed to initialize marketplace:', error);
+        }
+    }
+
+    async loadMarketplaceStats() {
+        try {
+            console.log('📊 Loading marketplace statistics...');
+            
+            // Load live blockchain statistics using the same method as metrics dashboard
+            const metrics = await api.getMetricsDashboard();
+            console.log('📊 Metrics received:', metrics);
+            console.log('📊 Metrics.data:', metrics.data);
+            console.log('📊 Recent transactions:', metrics.data?.recent_transactions);
+            
+            if (metrics && metrics.status === 'success' && metrics.data) {
+                this.updateMarketplaceStats(metrics.data);
+            } else if (metrics && metrics.data) {
+                // Try to use the data even if status is not 'success'
+                console.log('⚠️ Using metrics data despite status');
+                this.updateMarketplaceStats(metrics.data);
+            } else {
+                console.warn('⚠️ No metrics data received, trying fallback...');
+                await this.loadMarketplaceStatsFallback();
+            }
+        } catch (error) {
+            console.error('❌ Failed to load marketplace stats:', error);
+            console.log('🔄 Trying fallback to get latest block data...');
+            await this.loadMarketplaceStatsFallback();
+        }
+    }
+
+    updateMarketplaceStats(data) {
+        // Update stats cards using the same data structure as metrics dashboard
+        const totalBlocksEl = document.getElementById('total-blocks');
+        const activeCidsEl = document.getElementById('active-cids');
+        const avgComplexityEl = document.getElementById('avg-complexity');
+        const lastBlockTimeEl = document.getElementById('last-block-time');
+        
+        // Debug: Log the full data structure
+        console.log('📊 Full data structure:', JSON.stringify(data, null, 2));
+        console.log('📊 Recent transactions:', data.recent_transactions);
+        console.log('📊 Blockchain data:', data.blockchain);
+        
+        // Update total blocks - check both blockchain.validated_blocks and direct validated_blocks
+        if (totalBlocksEl) {
+            const totalBlocks = data.blockchain?.validated_blocks || 
+                              data.validated_blocks || 
+                              data.total_blocks || 
+                              data.blocks ||
+                              '0';
+            totalBlocksEl.textContent = totalBlocks.toString();
+            console.log('📊 Total blocks set to:', totalBlocks, 'from data:', data);
+        }
+        
+        // Update active CIDs - count unique CIDs from recent transactions
+        if (activeCidsEl) {
+            const recentTransactions = data.recent_transactions || [];
+            const uniqueCids = new Set();
+            recentTransactions.forEach(tx => {
+                if (tx.cid) uniqueCids.add(tx.cid);
+            });
+            
+            // Also check for CIDs in other possible locations
+            const blockchainCids = data.blockchain?.cids || [];
+            blockchainCids.forEach(cid => {
+                if (cid) uniqueCids.add(cid);
+            });
+            
+            const activeCids = uniqueCids.size || 
+                             data.active_cids || 
+                             data.cid_count ||
+                             data.blockchain?.active_cids ||
+                             data.blockchain?.cid_count ||
+                             '0';
+            activeCidsEl.textContent = activeCids.toString();
+            console.log('📊 Active CIDs set to:', activeCids, 'from', uniqueCids.size, 'unique CIDs in', recentTransactions.length, 'transactions');
+        }
+        
+        // Update average complexity - calculate from recent transactions using work_score
+        if (avgComplexityEl) {
+            const recentTransactions = data.recent_transactions || [];
+            let totalComplexity = 0;
+            let complexityCount = 0;
+            
+            // Use work_score as complexity metric since that's what's available
+            recentTransactions.forEach(tx => {
+                if (tx.work_score && !isNaN(tx.work_score)) {
+                    totalComplexity += parseFloat(tx.work_score);
+                    complexityCount++;
+                }
+            });
+            
+            // Also check for complexity in blockchain data
+            if (data.blockchain?.avg_complexity && !isNaN(data.blockchain.avg_complexity)) {
+                totalComplexity += parseFloat(data.blockchain.avg_complexity);
+                complexityCount++;
+            }
+            
+            const avgComplexity = complexityCount > 0 ? 
+                                (totalComplexity / complexityCount).toFixed(2) :
+                                data.avg_complexity ||
+                                data.average_complexity ||
+                                data.blockchain?.avg_complexity ||
+                                data.blockchain?.average_complexity ||
+                                '0';
+            avgComplexityEl.textContent = avgComplexity.toString();
+            console.log('📊 Avg complexity set to:', avgComplexity, 'from', complexityCount, 'work_score values');
+        }
+        
+        // Update last block time - use timestamp from latest transaction
+        if (lastBlockTimeEl) {
+            const recentTransactions = data.recent_transactions || [];
+            let lastBlockTime = 'Unknown';
+            
+            if (recentTransactions.length > 0) {
+                // Get the most recent transaction timestamp
+                const latestTx = recentTransactions[0];
+                if (latestTx.timestamp) {
+                    // The timestamp is already in seconds, convert to milliseconds
+                    const timestamp = latestTx.timestamp * 1000;
+                    const date = new Date(timestamp);
+                    lastBlockTime = date.toLocaleString();
+                }
+            } else {
+                // Try to get timestamp from data
+                let timestamp = data.last_update || 
+                              data.timestamp;
+                
+                if (timestamp) {
+                    // The timestamp is already in seconds, convert to milliseconds
+                    timestamp = timestamp * 1000;
+                    const date = new Date(timestamp);
+                    lastBlockTime = date.toLocaleString();
+                } else {
+                    lastBlockTime = 'Unknown';
+                }
+            }
+            
+            lastBlockTimeEl.textContent = lastBlockTime.toString();
+            console.log('📊 Last block time set to:', lastBlockTime);
+        }
+        
+        console.log('✅ Marketplace stats updated successfully');
+    }
+
+    async loadMarketplaceStatsFallback() {
+        try {
+            // Fallback: try to get latest block data
+            const latestBlock = await api.getLatestBlock();
+            console.log('📦 Latest block data:', latestBlock);
+            
+            if (latestBlock) {
+                // Create a basic data structure
+                const data = {
+                    blockchain: {
+                        validated_blocks: latestBlock.block_number || 0,
+                        latest_block: latestBlock.block_number || 0,
+                        latest_hash: latestBlock.block_hash || 'N/A'
+                    }
+                };
+                this.updateMarketplaceStats(data);
+                console.log('✅ Using fallback block data');
+            } else {
+                this.showFallbackStats();
+            }
+        } catch (error) {
+            console.error('❌ Fallback also failed:', error);
+            this.showFallbackStats();
+        }
+    }
+
+    showFallbackStats() {
+        // Show fallback values when API is unavailable
+        const totalBlocksEl = document.getElementById('total-blocks');
+        const activeCidsEl = document.getElementById('active-cids');
+        const avgComplexityEl = document.getElementById('avg-complexity');
+        const lastBlockTimeEl = document.getElementById('last-block-time');
+        
+        if (totalBlocksEl) totalBlocksEl.textContent = 'API Unavailable';
+        if (activeCidsEl) activeCidsEl.textContent = 'API Unavailable';
+        if (avgComplexityEl) avgComplexityEl.textContent = 'API Unavailable';
+        if (lastBlockTimeEl) lastBlockTimeEl.textContent = 'API Unavailable';
+    }
+
+
+    setupApiDemo() {
+        // Setup API demo functionality for marketplace
+        const demoMetricsBtn = document.getElementById('demo-metrics');
+        const demoBlocksBtn = document.getElementById('demo-blocks');
+        const demoPeersBtn = document.getElementById('demo-peers');
+        const apiOutput = document.getElementById('api-output');
+        
+        if (demoMetricsBtn && apiOutput) {
+            demoMetricsBtn.addEventListener('click', async () => {
+                try {
+                    apiOutput.textContent = 'Loading metrics...';
+                    const metrics = await api.getMetricsDashboard();
+                    apiOutput.textContent = JSON.stringify(metrics, null, 2);
+                } catch (error) {
+                    apiOutput.textContent = `Error: ${error.message}`;
+                }
+            });
+        }
+        
+        if (demoBlocksBtn && apiOutput) {
+            demoBlocksBtn.addEventListener('click', async () => {
+                try {
+                    apiOutput.textContent = 'Loading latest block...';
+                    const block = await api.getLatestBlock();
+                    apiOutput.textContent = JSON.stringify(block, null, 2);
+                } catch (error) {
+                    apiOutput.textContent = `Error: ${error.message}`;
+                }
+            });
+        }
+        
+        if (demoPeersBtn && apiOutput) {
+            demoPeersBtn.addEventListener('click', async () => {
+                try {
+                    apiOutput.textContent = 'Loading health check...';
+                    const health = await api.healthCheck();
+                    apiOutput.textContent = JSON.stringify(health, null, 2);
+                } catch (error) {
+                    apiOutput.textContent = `Error: ${error.message}`;
+                }
+            });
         }
     }
 

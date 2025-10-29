@@ -1,0 +1,125 @@
+{
+  "cid": "QmcJH8iiu5u4PWjj2tdW8HjQRTm9m9nLPwekJcRDLj3Jkx",
+  "block_height": 68,
+  "timestamp": 1761617229.3135383,
+  "problem_data": {
+    "numbers": [
+      37,
+      12,
+      49,
+      28,
+      47,
+      31,
+      48,
+      10,
+      23,
+      3,
+      28,
+      23,
+      35,
+      36,
+      10
+    ],
+    "target": 255,
+    "type": "subset_sum"
+  },
+  "solution_data": [
+    49,
+    48,
+    47,
+    37,
+    36,
+    35,
+    3
+  ],
+  "complexity_data": {
+    "asymmetry_space": 1.0,
+    "asymmetry_time": 32.22222222222222,
+    "measured_solve_time": 0.0058000000000000005,
+    "measured_verify_time": 0.00018,
+    "problem_class": "NP-Complete",
+    "problem_size": 10,
+    "solution_size": 7,
+    "space_solve_O": "O(n * target)",
+    "space_verify_O": "O(n)",
+    "time_solve_O": "O(2^n)",
+    "time_verify_O": "O(n)"
+  },
+  "energy_metrics": {
+    "cpu_utilization": 80.0,
+    "gpu_utilization": 0.0,
+    "memory_utilization": 50.0,
+    "solve_energy_joules": 0.5800000000000001,
+    "solve_power_watts": 100,
+    "solve_time_seconds": 0.0058000000000000005,
+    "verify_energy_joules": 0.00018,
+    "verify_power_watts": 1,
+    "verify_time_seconds": 0.00018
+  },
+  "raw_ipfs_data": {
+    "block_hash": "91acaccc5889b73fa1109f4217dc79e0bb71694b5029d0595c63b11bd42c500e",
+    "block_index": 68,
+    "bundle_version": "1.0",
+    "complexity": {
+      "asymmetry_space": 1.0,
+      "asymmetry_time": 32.22222222222222,
+      "measured_solve_time": 0.0058000000000000005,
+      "measured_verify_time": 0.00018,
+      "problem_class": "NP-Complete",
+      "problem_size": 10,
+      "solution_size": 7,
+      "space_solve_O": "O(n * target)",
+      "space_verify_O": "O(n)",
+      "time_solve_O": "O(2^n)",
+      "time_verify_O": "O(n)"
+    },
+    "created_at": "{\"timestamp\": \"2025-10-28T02:07:09Z\"}",
+    "cumulative_work_score": 1,
+    "energy_metrics": {
+      "cpu_utilization": 80.0,
+      "gpu_utilization": 0.0,
+      "memory_utilization": 50.0,
+      "solve_energy_joules": 0.5800000000000001,
+      "solve_power_watts": 100,
+      "solve_time_seconds": 0.0058000000000000005,
+      "verify_energy_joules": 0.00018,
+      "verify_power_watts": 1,
+      "verify_time_seconds": 0.00018
+    },
+    "miner_address": "0xBEANSILLW7MQA",
+    "mining_capacity": "TIER_1_MOBILE",
+    "problem": {
+      "numbers": [
+        37,
+        12,
+        49,
+        28,
+        47,
+        31,
+        48,
+        10,
+        23,
+        3,
+        28,
+        23,
+        35,
+        36,
+        10
+      ],
+      "target": 255,
+      "type": "subset_sum"
+    },
+    "solution": [
+      49,
+      48,
+      47,
+      37,
+      36,
+      35,
+      3
+    ],
+    "timestamp": 1761617229.3228362
+  },
+  "data_quality_score": 0.0,
+  "extraction_method": "api"
+}

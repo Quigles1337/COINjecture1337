@@ -1,15 +1,15 @@
 #!/bin/bash
 
-# COINjecture v3.13.14 - Complete Package Builder
+# COINjecture v3.16.0 - Complete Package Builder
 # Builds all download packages for macOS, Windows, and Linux
 
 set -e
 
-echo "🚀 COINjecture v3.13.14 - Complete Package Builder"
+echo "🚀 COINjecture v3.16.0 - Complete Package Builder"
 echo "=================================================="
 
 # Configuration
-VERSION="3.13.14"
+VERSION="3.16.0"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST_DIR="$PROJECT_ROOT/dist"
 PACKAGES_DIR="$DIST_DIR/packages"
@@ -88,6 +88,9 @@ EOF
 - ✅ Live mining with real-time gas costs
 - ✅ Enhanced CLI with gas integration
 - ✅ Complete wallet and mining system
+- ✅ CLI Fixes (426 error resolved)
+- ✅ Data Marketplace Integration
+- ✅ Improved Mining Validation
 
 ## API Server
 - **Live Server**: http://167.172.213.70:12346

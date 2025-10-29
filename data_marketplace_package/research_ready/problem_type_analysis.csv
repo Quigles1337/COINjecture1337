@@ -1,0 +1,4 @@
+,problem_size,problem_size,problem_size,solve_time,solve_time,energy_used,energy_used,solution_quality,solution_quality
+,count,mean,std,mean,std,mean,std,mean,std
+problem_type,,,,,,,,,
+unknown,100,23.96,6.347,7.98,3.173,0.0,0.0,0.0,0.0

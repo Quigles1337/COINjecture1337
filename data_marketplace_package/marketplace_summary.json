@@ -1,0 +1,123 @@
+{
+  "package_info": {
+    "created_at": "2025-10-27T19:27:00.360663",
+    "package_version": "1.0.0",
+    "data_sources": [
+      "blockchain",
+      "ipfs",
+      "api",
+      "csv"
+    ],
+    "total_files": 81,
+    "total_records": 300,
+    "ipfs_cids": 77
+  },
+  "datasets": {
+    "computational_data": {
+      "description": "Main computational problem and solution data",
+      "format": "CSV",
+      "records": 100,
+      "columns": [
+        "block_height",
+        "timestamp",
+        "cid",
+        "problem_size",
+        "problem_difficulty",
+        "problem_type",
+        "solve_time",
+        "verify_time",
+        "memory_used",
+        "energy_used",
+        "solution_quality",
+        "algorithm",
+        "complexity_multiplier"
+      ]
+    },
+    "gas_calculation": {
+      "description": "Dynamic gas calculation and efficiency data",
+      "format": "CSV",
+      "records": 100,
+      "columns": [
+        "block_height",
+        "timestamp",
+        "cid",
+        "gas_used",
+        "complexity_multiplier",
+        "calculated_gas",
+        "gas_efficiency"
+      ]
+    },
+    "mining_efficiency": {
+      "description": "Mining work scores and efficiency metrics",
+      "format": "CSV",
+      "records": 100,
+      "columns": [
+        "block_height",
+        "timestamp",
+        "cid",
+        "work_score",
+        "gas_used",
+        "miner_address",
+        "mining_efficiency"
+      ]
+    },
+    "ipfs_data": {
+      "description": "Rich computational data from IPFS storage",
+      "format": "JSON",
+      "records": 77,
+      "structure": {
+        "problem": "Problem definition and constraints",
+        "solution": "Solution data and performance metrics",
+        "complexity": "Computational complexity analysis",
+        "energy_metrics": "Energy consumption and efficiency data"
+      }
+    }
+  },
+  "research_applications": [
+    "Computational complexity analysis",
+    "Algorithm performance comparison",
+    "Energy efficiency studies",
+    "Blockchain gas optimization",
+    "Mining efficiency research",
+    "IPFS data storage patterns",
+    "Carbon footprint analysis",
+    "Dynamic pricing algorithms"
+  ],
+  "data_quality": {
+    "validation": "Applied data cleaning and validation",
+    "deduplication": "Removed duplicate records",
+    "normalization": "Standardized data formats",
+    "completeness": "Filled missing values where possible"
+  },
+  "pricing_tiers": {
+    "basic": {
+      "price": "$99",
+      "includes": [
+        "CSV datasets",
+        "Basic documentation",
+        "Sample data"
+      ],
+      "records": "100-500"
+    },
+    "professional": {
+      "price": "$299",
+      "includes": [
+        "All datasets",
+        "IPFS data",
+        "API access",
+        "Full documentation"
+      ],
+      "records": "500-2000"
+    },
+    "enterprise": {
+      "price": "$999",
+      "includes": [
+        "Complete dataset",
+        "Custom formats",
+        "Support",
+        "Updates"
+      ],
+      "records": "2000+"
+    }
+  }
+}

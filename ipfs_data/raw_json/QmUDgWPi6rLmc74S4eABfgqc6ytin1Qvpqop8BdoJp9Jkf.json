@@ -1,0 +1,58 @@
+{
+  "block_hash": "c466572a0ce4f6c1434a84efb85eb163f6dcd87b12d9a3e32cd10806b504a6bc",
+  "block_index": 62,
+  "bundle_version": "1.0",
+  "complexity": {
+    "asymmetry_space": 1.0,
+    "asymmetry_time": 26.666666666666668,
+    "measured_solve_time": 0.0032,
+    "measured_verify_time": 0.00012,
+    "problem_class": "NP-Complete",
+    "problem_size": 10,
+    "solution_size": 6,
+    "space_solve_O": "O(n * target)",
+    "space_verify_O": "O(n)",
+    "time_solve_O": "O(2^n)",
+    "time_verify_O": "O(n)"
+  },
+  "created_at": "{\"timestamp\": \"2025-10-28T02:06:04Z\"}",
+  "cumulative_work_score": 63469.17200276384,
+  "energy_metrics": {
+    "cpu_utilization": 80.0,
+    "gpu_utilization": 0.0,
+    "memory_utilization": 50.0,
+    "solve_energy_joules": 0.32,
+    "solve_power_watts": 100,
+    "solve_time_seconds": 0.0032,
+    "verify_energy_joules": 0.00012,
+    "verify_power_watts": 1,
+    "verify_time_seconds": 0.00012
+  },
+  "miner_address": "0xBEANSILLW7MQA",
+  "mining_capacity": "TIER_1_MOBILE",
+  "problem": {
+    "numbers": [
+      42,
+      47,
+      20,
+      25,
+      45,
+      50,
+      23,
+      21,
+      38,
+      2
+    ],
+    "target": 221,
+    "type": "subset_sum"
+  },
+  "solution": [
+    42,
+    47,
+    50,
+    23,
+    21,
+    38
+  ],
+  "timestamp": 1761617164.3214674
+}

@@ -1,5 +1,44 @@
 # Changelog
 
+## [3.16.0] - 2025-10-28 - 🔧 CLI FIXES & DATA MARKETPLACE RELEASE
+
+### 🎉 **RELEASE: CLI Fixes & Data Marketplace**
+
+#### **🔧 CLI Fixes & Improvements**
+- **426 Error Fixed**: CLI now uses API server for IPFS access instead of direct connection
+- **Mining Validation**: Fixed subset sum solver to prevent duplicate solutions
+- **Block Submission**: Added solution_data and problem_data to block submission payload
+- **Verification**: Updated to use ProblemRegistry for proper consensus validation
+- **IPFS Integration**: CLI now matches web version configuration (port 12346)
+
+#### **🏪 Data Marketplace Integration**
+- **New Marketplace Page**: Integrated data marketplace into main website
+- **Live Statistics**: Real-time blockchain data display
+- **Research Products**: Computational complexity datasets and IPFS samples
+- **Pricing Tiers**: $BEANS and USD pricing options
+- **API Demo**: Interactive API testing interface
+- **Sample Downloads**: Free data samples for evaluation
+
+#### **🌐 Web Interface Enhancements**
+- **SPA Integration**: Marketplace fully integrated into single-page application
+- **Responsive Design**: Mobile-optimized marketplace interface
+- **SEO Optimization**: Updated sitemap and meta tags
+- **Cache Busting**: Improved script loading and updates
+
+#### **📊 Technical Improvements**
+- **API Consistency**: CLI and web use same API endpoints
+- **Error Handling**: Better error messages and debugging
+- **Validation**: Proper subset sum solution validation
+- **Network Sync**: Improved blockchain state synchronization
+
+#### **🚀 Installation & Deployment**
+- **S3 Deployment**: Updated web interface deployed to production
+- **CloudFront**: Cache invalidation for latest updates
+- **Package Building**: Ready for v3.16.0 package generation
+- **Cross-platform**: All platforms supported
+
+### 🎯 **Ready for Production Use**
+
 ## [3.15.0] - 2025-10-27 - 🚀 DYNAMIC GAS CALCULATION RELEASE
 
 ### 🎉 **MAJOR RELEASE: Dynamic Gas Calculation System**
@@ -124,7 +163,7 @@
 
 ---
 
-## [3.13.17] - 2025-01-26 - 🚧 PARTIAL FIX: CID Length Issues Persist
+## [3.13.17] - 2025-10-26 - 🚧 PARTIAL FIX: CID Length Issues Persist
 
 ### 🚨 **CRITICAL ISSUE: CID Length Validation Failures**
 

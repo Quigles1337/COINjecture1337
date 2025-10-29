@@ -1,0 +1,69 @@
+{
+  "block_hash": "0b23feda3564efe2d33309dbb1bd2aa97f4655614fd086695010cd68565772c8",
+  "block_index": 8,
+  "bundle_version": "1.0",
+  "complexity": {
+    "asymmetry_space": 1.0,
+    "asymmetry_time": 48.888888888888886,
+    "measured_solve_time": 0.0088,
+    "measured_verify_time": 0.00018,
+    "problem_class": "NP-Complete",
+    "problem_size": 10,
+    "solution_size": 8,
+    "space_solve_O": "O(n * target)",
+    "space_verify_O": "O(n)",
+    "time_solve_O": "O(2^n)",
+    "time_verify_O": "O(n)"
+  },
+  "created_at": "{\"timestamp\": \"2025-10-27T13:41:10Z\"}",
+  "cumulative_work_score": 112819.36015092541,
+  "energy_metrics": {
+    "cpu_utilization": 80.0,
+    "gpu_utilization": 0.0,
+    "memory_utilization": 50.0,
+    "solve_energy_joules": 0.88,
+    "solve_power_watts": 100,
+    "solve_time_seconds": 0.0088,
+    "verify_energy_joules": 0.00018,
+    "verify_power_watts": 1,
+    "verify_time_seconds": 0.00018
+  },
+  "miner_address": "BEANSesdpmvi5rtm",
+  "mining_capacity": "TIER_1_MOBILE",
+  "problem": {
+    "numbers": [
+      86,
+      75,
+      85,
+      20,
+      69,
+      6,
+      90,
+      92,
+      21,
+      76,
+      99,
+      49,
+      3,
+      63,
+      56,
+      13,
+      12,
+      44,
+      27
+    ],
+    "target": 509,
+    "type": "subset_sum"
+  },
+  "solution": [
+    76,
+    92,
+    6,
+    69,
+    20,
+    85,
+    75,
+    86
+  ],
+  "timestamp": 1761572470.8378525
+}

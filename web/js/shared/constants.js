@@ -1,5 +1,5 @@
 // COINjecture Web Interface - Constants and Configuration
-// Version: 3.15.0
+// Version: 3.16.0
 
 // API Configuration
 export const API_CONFIG = {
@@ -65,7 +65,7 @@ export const IPFS_GATEWAYS = [
 
 // Cache Configuration
 export const CACHE_CONFIG = {
-  BUSTER: '?v=3.15.0&t=' + Date.now(),
+  BUSTER: '?v=3.16.0&t=' + Date.now(),
   FORCE_REFRESH: true,
   METRICS_REFRESH_INTERVAL: 15000, // 15 seconds
   BLOCK_REFRESH_INTERVAL: 5000     // 5 seconds
@@ -120,7 +120,7 @@ export const SUCCESS_MESSAGES = {
 
 // Version Information
 export const VERSION_INFO = {
-  VERSION: '3.15.0',
+  VERSION: '3.16.0',
   BUILD_DATE: '2024-12-25',
   API_VERSION: 'v1',
   FEATURES: [
@@ -128,6 +128,8 @@ export const VERSION_INFO = {
     'IPFS Integration',
     'Mobile Optimization',
     'Real-time Metrics',
-    'Blockchain Explorer'
+    'Blockchain Explorer',
+    'Data Marketplace',
+    'CLI Fixes'
   ]
 };

@@ -1,0 +1,23 @@
+{
+  "computational_data": {
+    "block_height": "Blockchain block number",
+    "timestamp": "Block creation timestamp (Unix)",
+    "cid": "IPFS Content Identifier",
+    "problem_size": "Size of the computational problem",
+    "problem_difficulty": "Difficulty level (1.0-5.0)",
+    "problem_type": "Type of problem (subset_sum, knapsack, etc.)",
+    "solve_time": "Time to solve the problem (seconds)",
+    "verify_time": "Time to verify the solution (seconds)",
+    "memory_used": "Memory consumption (MB)",
+    "energy_used": "Energy consumption (Joules)",
+    "solution_quality": "Quality of the solution (0.0-1.0)",
+    "algorithm": "Algorithm used for solving",
+    "complexity_multiplier": "Overall complexity multiplier"
+  },
+  "ipfs_data": {
+    "problem": "Problem definition and constraints",
+    "solution": "Solution data and performance metrics",
+    "complexity": "Computational complexity analysis",
+    "energy_metrics": "Energy consumption and efficiency data"
+  }
+}

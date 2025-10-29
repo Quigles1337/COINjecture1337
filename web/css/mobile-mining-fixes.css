@@ -1,0 +1,552 @@
+/* COINjecture Web Interface - Mobile Mining Fixes
+ * Version: 3.15.0
+ */
+
+/* Mobile Mining Interface Enhancements */
+@media (max-width: 768px) {
+  /* Enhanced touch targets for mobile */
+  .btn-mining, .btn-stop, .btn-test, .btn-primary, .btn-secondary {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 12px 20px;
+    font-size: 16px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Improved button states for touch */
+  .btn-mining:active, .btn-stop:active, .btn-test:active {
+    transform: scale(0.95);
+    transition: transform 0.1s ease;
+  }
+
+  /* Mobile mining tips styling */
+  .mobile-mining-tips {
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 8px;
+    margin: 20px 0;
+    overflow: hidden;
+  }
+
+  .mobile-mining-tips.collapsed .tips-content {
+    display: none;
+  }
+
+  .tips-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: #333;
+    cursor: pointer;
+  }
+
+  .tips-header h3 {
+    color: #9d7ce8;
+    margin: 0;
+    font-size: 16px;
+  }
+
+  .tips-toggle {
+    background: none;
+    border: none;
+    color: #9d7ce8;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 5px;
+  }
+
+  .tips-content {
+    padding: 15px 20px;
+  }
+
+  .tip-item {
+    color: #ccc;
+    margin-bottom: 10px;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .tip-item:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Offline indicator */
+  .offline-indicator {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: #ff6600;
+    color: #000;
+    text-align: center;
+    padding: 10px;
+    font-weight: bold;
+    z-index: 1000;
+    animation: slideDown 0.3s ease;
+  }
+
+  @keyframes slideDown {
+    from {
+      transform: translateY(-100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  /* Mobile error messages */
+  .mobile-error-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #2a1a1a;
+    border: 2px solid #ff6666;
+    border-radius: 8px;
+    padding: 20px;
+    max-width: 90%;
+    z-index: 1001;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .error-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .error-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+
+  .error-text {
+    color: #ff6666;
+    font-size: 14px;
+    line-height: 1.4;
+    flex: 1;
+  }
+
+  .error-dismiss {
+    background: none;
+    border: none;
+    color: #ff6666;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 5px;
+    flex-shrink: 0;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+
+  /* Power saving mode styles */
+  .power-saving-mode {
+    opacity: 0.8;
+  }
+
+  .power-saving-mode .mining-log {
+    animation: none !important;
+  }
+
+  .power-saving-mode .btn-mining:not(:disabled) {
+    background: #666;
+  }
+
+  /* Enhanced mobile mining controls */
+  .mining-controls {
+    position: sticky;
+    top: 0;
+    background: #1a1a1a;
+    z-index: 100;
+    padding: 15px;
+    margin: -15px -15px 20px -15px;
+    border-bottom: 1px solid #333;
+  }
+
+  .mining-settings {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+  }
+
+  .setting-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .setting-group label {
+    color: #ccc;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .setting-group input {
+    padding: 10px;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background: #2a2a2a;
+    color: #fff;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+
+  .setting-group input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+  }
+
+  .mining-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+  }
+
+  /* Mobile problem display improvements */
+  .problem-display {
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.4;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .problem-info {
+    margin-bottom: 15px;
+  }
+
+  .problem-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 10px;
+  }
+
+  .problem-size, .problem-target, .problem-device {
+    background: #333;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #9d7ce8;
+  }
+
+  .problem-numbers {
+    color: #ccc;
+    word-break: break-all;
+  }
+
+  /* Mobile solution display */
+  .solution-info {
+    background: #1a3a1a;
+    border: 1px solid #4a7c4a;
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 15px;
+  }
+
+  .solution-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .solution-method, .solution-time, .solution-work-score {
+    background: #2a5a2a;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #4a7c4a;
+  }
+
+  .solution-details {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .solution-indices, .solution-numbers, .solution-sum {
+    color: #ccc;
+    font-size: 13px;
+  }
+
+  /* Mobile statistics improvements */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .stat-item {
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 10px;
+    text-align: center;
+  }
+
+  .stat-label {
+    display: block;
+    color: #888;
+    font-size: 12px;
+    margin-bottom: 5px;
+  }
+
+  .stat-value {
+    display: block;
+    color: #9d7ce8;
+    font-size: 16px;
+    font-weight: bold;
+  }
+
+  .stat-value.mining {
+    color: #00cc00;
+    animation: pulse 2s infinite;
+  }
+
+  .stat-value.stopped {
+    color: #ff6666;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  /* Mobile log improvements */
+  .mining-log {
+    height: 200px;
+    font-size: 12px;
+    line-height: 1.3;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 10px;
+  }
+
+  .log-entry {
+    margin-bottom: 5px;
+    padding: 5px;
+    border-radius: 3px;
+  }
+
+  .log-entry.info {
+    background: #2a2a2a;
+    color: #ccc;
+  }
+
+  .log-entry.success {
+    background: #1a3a1a;
+    color: #4a7c4a;
+  }
+
+  .log-entry.error {
+    background: #3a1a1a;
+    color: #ff6666;
+  }
+
+  .log-time {
+    color: #888;
+    font-size: 11px;
+    margin-right: 8px;
+  }
+
+  .log-message {
+    color: inherit;
+  }
+
+  /* Mobile wallet improvements */
+  .wallet-info {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .wallet-address, .wallet-balance {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+
+  .wallet-address .value, .wallet-balance .value {
+    word-break: break-all;
+    font-size: 13px;
+  }
+
+  .copy-btn {
+    align-self: flex-start;
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
+  /* Mobile navigation improvements */
+  .nav-links {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .nav-link {
+    padding: 8px 12px;
+    font-size: 14px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Mobile mining header */
+  .mining-header h1 {
+    font-size: 28px;
+    margin-bottom: 10px;
+  }
+
+  .mining-subtitle {
+    font-size: 16px;
+  }
+
+  /* Mobile container padding */
+  .mining-container {
+    padding: 15px;
+  }
+
+  /* Mobile card improvements */
+  .wallet-card, .mining-card, .problem-card, .stats-card, .log-card {
+    margin-bottom: 20px;
+    padding: 15px;
+  }
+
+  .wallet-card h2, .mining-card h2, .problem-card h2, .stats-card h2, .log-card h2 {
+    font-size: 18px;
+    margin-bottom: 15px;
+  }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 480px) {
+  .mining-header h1 {
+    font-size: 24px;
+  }
+
+  .mining-subtitle {
+    font-size: 14px;
+  }
+
+  .mining-settings {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .mining-buttons {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wallet-card, .mining-card, .problem-card, .stats-card, .log-card {
+    padding: 12px;
+  }
+
+  .mining-log {
+    height: 150px;
+    font-size: 11px;
+  }
+
+  .problem-meta, .solution-meta {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .problem-size, .problem-target, .problem-device,
+  .solution-method, .solution-time, .solution-work-score {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+}
+
+/* Touch device specific improvements */
+@media (hover: none) and (pointer: coarse) {
+  .btn-mining, .btn-stop, .btn-test, .btn-primary, .btn-secondary {
+    min-height: 48px;
+    padding: 14px 24px;
+    font-size: 16px;
+  }
+
+  .nav-link {
+    min-height: 48px;
+    padding: 12px 16px;
+  }
+
+  .copy-btn {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 10px;
+  }
+
+  /* Improve touch targets for small elements */
+  .tips-toggle, .error-dismiss {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* High contrast mode for mobile */
+@media (prefers-contrast: high) {
+  .mobile-mining-tips {
+    border: 2px solid #fff;
+  }
+
+  .mobile-error-message {
+    border: 3px solid #ff0000;
+  }
+
+  .offline-indicator {
+    border: 2px solid #000;
+  }
+}
+
+/* Reduced motion for mobile */
+@media (prefers-reduced-motion: reduce) {
+  .btn-mining:active, .btn-stop:active, .btn-test:active {
+    transform: none;
+  }
+
+  .stat-value.mining {
+    animation: none;
+  }
+
+  .offline-indicator {
+    animation: none;
+  }
+
+  .mobile-error-message {
+    animation: none;
+  }
+}

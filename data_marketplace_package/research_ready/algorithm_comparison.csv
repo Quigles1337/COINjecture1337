@@ -1,0 +1,4 @@
+,solve_time,solve_time,solve_time,solution_quality,solution_quality,energy_used,energy_used
+,count,mean,std,mean,std,mean,std
+algorithm,,,,,,,
+unknown,100,7.98,3.173,0.0,0.0,0.0,0.0

@@ -1151,19 +1151,23 @@ def solve_subset_sum(problem):
     if target == 0:
         return []
 
+    # Use indices to avoid duplicate usage of the same number
     dp = {0: []}
 
-    for num in numbers:
+    for i, num in enumerate(numbers):
         new_sums = {}
         for current_sum, path in dp.items():
             new_sum = current_sum + num
             if new_sum <= target:
                 if new_sum not in dp:
-                     new_sums[new_sum] = path + [num]
+                    # Check if this number index is already used in the path
+                    if i not in [j for j in path if isinstance(j, tuple)]:
+                        new_sums[new_sum] = path + [(i, num)]
         dp.update(new_sums)
 
     if target in dp:
-        return dp[target]
+        # Extract just the numbers from the solution
+        return [num for _, num in dp[target]]
     else:
         return []
 

@@ -233,7 +233,7 @@ export class MetricsDashboard {
             if (metrics && metrics.status === 'success') {
                 this.metricsData = metrics.data;
                 this.lastUpdateTime = Date.now();
-                this.updateMetricsDisplay();
+                await this.updateMetricsDisplay();
                 this.updateLastUpdatedTime();
                 console.log('✅ Metrics display updated successfully');
             } else {
@@ -241,7 +241,7 @@ export class MetricsDashboard {
                 // Try to use the data even if status is not 'success'
                 if (metrics && metrics.data) {
                     this.metricsData = metrics.data;
-                    this.updateMetricsDisplay();
+                    await this.updateMetricsDisplay();
                     console.log('✅ Using metrics data despite status');
                 } else {
                     this.showError('No metrics data available');
@@ -269,7 +269,7 @@ export class MetricsDashboard {
                             success_rate: 100
                         }
                     };
-                    this.updateMetricsDisplay();
+                    await this.updateMetricsDisplay();
                     console.log('✅ Using fallback block data');
                 } else {
                     this.showError('No blockchain data available');
@@ -284,7 +284,7 @@ export class MetricsDashboard {
     /**
      * Update metrics display
      */
-    updateMetricsDisplay() {
+    async updateMetricsDisplay() {
         if (!this.metricsData) return;
         
         this.updateBlockchainOverview();
@@ -293,8 +293,8 @@ export class MetricsDashboard {
         this.updateTPSMetrics();
         this.updateBlockTimeMetrics();
         this.updateHashRateMetrics();
-        this.updateNetworkMetrics();
-        this.updateRewardsMetrics();
+        await this.updateNetworkMetrics();
+        await this.updateRewardsMetrics();
         this.updateEfficiencyMetrics();
         this.updateTransactionsList();
     }
@@ -396,32 +396,60 @@ export class MetricsDashboard {
     /**
      * Update network metrics
      */
-    updateNetworkMetrics() {
+    async updateNetworkMetrics() {
         const network = this.metricsData.network;
         if (!network) return;
         
-        // Calculate active miners from recent transactions
-        const recentTransactions = this.metricsData.recent_transactions || [];
-        const uniqueMiners = new Set(recentTransactions.map(tx => tx.miner)).size;
-        const activeMiners = Math.max(uniqueMiners, network.active_miners || 0);
+        // Use actual API data
+        let activePeers = network.active_peers || 0;
+        let activeMiners = network.active_miners || 0;
+        const difficulty = network.avg_difficulty || 1;
         
-        // Estimate active peers based on mining activity
-        // In a P2P network, we estimate peers based on:
-        // 1. Active miners (from recent transactions)
-        // 2. Bootstrap nodes and API servers
-        // 3. Non-mining nodes that might be connected
-        const bootstrapNodes = 1; // API server acts as bootstrap
-        const estimatedPeers = Math.max(activeMiners + bootstrapNodes, network.active_peers || 1);
-        
-        // Add a note if we're estimating
-        if (network.active_peers === 0 && activeMiners > 0) {
-            console.log(`📊 Estimating network size: ${activeMiners} miners + ${bootstrapNodes} bootstrap = ${estimatedPeers} total peers`);
+        // Try to get more accurate data from health endpoint
+        try {
+            const healthResponse = await fetch('https://api.coinjecture.com/health');
+            if (healthResponse.ok) {
+                const healthData = await healthResponse.json();
+                console.log('📊 Health endpoint data:', healthData);
+                
+                if (healthData.peers_connected && healthData.peers_connected > activePeers) {
+                    activePeers = healthData.peers_connected;
+                    console.log('📊 Using higher peer count from health endpoint:', activePeers);
+                }
+            }
+        } catch (error) {
+            console.warn('⚠️ Could not fetch health data, using metrics data:', error);
         }
         
-        if (this.networkPeers) this.networkPeers.textContent = estimatedPeers;
-        if (this.networkPeersCount) this.networkPeersCount.textContent = estimatedPeers;
+        // Calculate unique miners from recent transactions as a cross-check
+        const recentTransactions = this.metricsData.recent_transactions || [];
+        const uniqueMiners = new Set(recentTransactions.map(tx => tx.miner || tx.miner_address).filter(Boolean)).size;
+        
+        console.log('📊 Network data from metrics API:', {
+            active_peers: network.active_peers,
+            active_miners: network.active_miners,
+            avg_difficulty: difficulty
+        });
+        
+        console.log('📊 Cross-check - unique miners from transactions:', uniqueMiners);
+        
+        // If we have more unique miners from transactions, use that as a minimum
+        if (uniqueMiners > activeMiners) {
+            activeMiners = uniqueMiners;
+            console.log('📊 Using higher miner count from transaction analysis:', activeMiners);
+        }
+        
+        console.log('📊 Final network values:', {
+            active_peers: activePeers,
+            active_miners: activeMiners,
+            unique_miners_from_tx: uniqueMiners,
+            avg_difficulty: difficulty
+        });
+        
+        if (this.networkPeers) this.networkPeers.textContent = activePeers;
+        if (this.networkPeersCount) this.networkPeersCount.textContent = activePeers;
         if (this.networkMiners) this.networkMiners.textContent = activeMiners;
-        if (this.networkDifficulty) this.networkDifficulty.textContent = network.avg_difficulty || 0;
+        if (this.networkDifficulty) this.networkDifficulty.textContent = difficulty;
         
         this.updateTrendIndicator('network-trend', '→');
     }
@@ -429,12 +457,76 @@ export class MetricsDashboard {
     /**
      * Update rewards metrics
      */
-    updateRewardsMetrics() {
+    async updateRewardsMetrics() {
         const rewards = this.metricsData.rewards;
-        if (!rewards) return;
+        const blockchain = this.metricsData.blockchain;
+        if (!rewards || !blockchain) return;
         
-        if (this.rewardsTotal) this.rewardsTotal.textContent = numberUtils.formatNumber(rewards.total_distributed || 0);
-        if (this.rewardsDistributed) this.rewardsDistributed.textContent = numberUtils.formatNumber(rewards.total_distributed || 0);
+        console.log('📊 Rewards data from API:', rewards);
+        console.log('📊 Blockchain data:', blockchain);
+        
+        // Calculate total BEANS in circulation
+        // We know there are 153 blocks, each with rewards
+        const totalBlocks = blockchain.validated_blocks || blockchain.latest_block || 0;
+        const recentTransactions = this.metricsData.recent_transactions || [];
+        
+        let totalCirculation = 0;
+        
+        // Method 1: Calculate from recent transactions average
+        if (recentTransactions.length > 0) {
+            const recentRewards = recentTransactions
+                .map(tx => parseFloat(tx.reward) || 0)
+                .filter(reward => reward > 0);
+            
+            if (recentRewards.length > 0) {
+                const averageRewardPerBlock = recentRewards.reduce((sum, reward) => sum + reward, 0) / recentRewards.length;
+                const estimatedTotalCirculation = averageRewardPerBlock * totalBlocks;
+                
+                console.log('📊 Recent transactions analysis:', {
+                    recent_transactions: recentTransactions.length,
+                    average_reward_per_block: averageRewardPerBlock,
+                    total_blocks: totalBlocks,
+                    estimated_total_circulation: estimatedTotalCirculation
+                });
+                
+                totalCirculation = estimatedTotalCirculation;
+            }
+        }
+        
+        // Method 2: Try to get more accurate data from leaderboard
+        try {
+            const leaderboard = await api.getRewardsLeaderboard();
+            console.log('📊 Rewards leaderboard data:', leaderboard);
+            
+            if (leaderboard && leaderboard.data && Array.isArray(leaderboard.data)) {
+                const totalFromLeaderboard = leaderboard.data.reduce((sum, entry) => {
+                    return sum + (parseFloat(entry.total_rewards) || 0);
+                }, 0);
+                
+                console.log('📊 Total rewards from leaderboard:', totalFromLeaderboard);
+                
+                // Use the higher value
+                totalCirculation = Math.max(totalCirculation, totalFromLeaderboard);
+            }
+        } catch (error) {
+            console.warn('⚠️ Could not fetch leaderboard data:', error);
+        }
+        
+        // Method 3: Fallback to API data if our calculation is too low
+        const apiTotal = rewards.total_distributed || 0;
+        if (apiTotal > totalCirculation) {
+            totalCirculation = apiTotal;
+            console.log('📊 Using API total as it\'s higher:', apiTotal);
+        }
+        
+        console.log('📊 Final total circulation calculation:', {
+            total_blocks: totalBlocks,
+            estimated_circulation: totalCirculation,
+            api_total: apiTotal
+        });
+        
+        if (this.rewardsTotal) this.rewardsTotal.textContent = numberUtils.formatNumber(totalCirculation);
+        if (this.rewardsDistributed) this.rewardsDistributed.textContent = numberUtils.formatNumber(totalCirculation);
         if (this.rewardsUnit) this.rewardsUnit.textContent = rewards.unit || 'BEANS';
         
         this.updateTrendIndicator('rewards-trend', '→');

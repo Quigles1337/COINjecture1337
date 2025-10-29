@@ -1,0 +1,124 @@
+{
+  "computational_data": {
+    "endpoint": "/api/v1/computational-data",
+    "description": "Get all computational data",
+    "sample_response": [
+      {
+        "block_height": 10780,
+        "timestamp": 1761440651.635552,
+        "cid": "Qm5a8118aab2cb48a8932bc55c48ad655b803ad1c6ba37",
+        "problem_size": 22,
+        "problem_difficulty": 1.4,
+        "problem_type": "unknown",
+        "problem_constraints": 0,
+        "solve_time": 7.0,
+        "verify_time": 0.0,
+        "memory_used": 292,
+        "energy_used": 0.0,
+        "solution_quality": 0.0,
+        "algorithm": "unknown",
+        "time_asymmetry": 23.33333333333333,
+        "space_asymmetry": 13.272727272727272,
+        "problem_weight": 1.82,
+        "complexity_multiplier": 0.0
+      },
+      {
+        "block_height": 10781,
+        "timestamp": 1761440652.1996994,
+        "cid": "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n",
+        "problem_size": 28,
+        "problem_difficulty": 2.6,
+        "problem_type": "unknown",
+        "problem_constraints": 0,
+        "solve_time": 10.0,
+        "verify_time": 0.0,
+        "memory_used": 378,
+        "energy_used": 0.0,
+        "solution_quality": 0.0,
+        "algorithm": "unknown",
+        "time_asymmetry": 25.0,
+        "space_asymmetry": 13.5,
+        "problem_weight": 3.64,
+        "complexity_multiplier": 0.0
+      },
+      {
+        "block_height": 10782,
+        "timestamp": 1761440654.3375726,
+        "cid": "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n",
+        "problem_size": 28,
+        "problem_difficulty": 2.6,
+        "problem_type": "unknown",
+        "problem_constraints": 0,
+        "solve_time": 10.0,
+        "verify_time": 0.0,
+        "memory_used": 378,
+        "energy_used": 0.0,
+        "solution_quality": 0.0,
+        "algorithm": "unknown",
+        "time_asymmetry": 25.0,
+        "space_asymmetry": 13.5,
+        "problem_weight": 3.64,
+        "complexity_multiplier": 0.0
+      },
+      {
+        "block_height": 10783,
+        "timestamp": 1761440655.837822,
+        "cid": "Qmb5a647e35c0b32dbcabf834a5023184370aadcc2c2cf",
+        "problem_size": 11,
+        "problem_difficulty": 1.2,
+        "problem_type": "unknown",
+        "problem_constraints": 0,
+        "solve_time": 1.5,
+        "verify_time": 0.0,
+        "memory_used": 171,
+        "energy_used": 0.0,
+        "solution_quality": 0.0,
+        "algorithm": "unknown",
+        "time_asymmetry": 7.5,
+        "space_asymmetry": 15.545454545454543,
+        "problem_weight": 1.44,
+        "complexity_multiplier": 0.0
+      },
+      {
+        "block_height": 10784,
+        "timestamp": 1761440656.513816,
+        "cid": "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n",
+        "problem_size": 28,
+        "problem_difficulty": 2.6,
+        "problem_type": "unknown",
+        "problem_constraints": 0,
+        "solve_time": 10.0,
+        "verify_time": 0.0,
+        "memory_used": 378,
+        "energy_used": 0.0,
+        "solution_quality": 0.0,
+        "algorithm": "unknown",
+        "time_asymmetry": 25.0,
+        "space_asymmetry": 13.5,
+        "problem_weight": 3.64,
+        "complexity_multiplier": 0.0
+      }
+    ]
+  },
+  "problem_types": {
+    "endpoint": "/api/v1/problem-types",
+    "description": "Get problem type distribution",
+    "sample_response": {
+      "unknown": 100
+    }
+  },
+  "algorithms": {
+    "endpoint": "/api/v1/algorithms",
+    "description": "Get algorithm performance data",
+    "sample_response": {
+      "unknown": 7.98
+    }
+  },
+  "energy_efficiency": {
+    "endpoint": "/api/v1/energy-efficiency",
+    "description": "Get energy efficiency metrics",
+    "sample_response": {
+      "unknown": 0.0
+    }
+  }
+}

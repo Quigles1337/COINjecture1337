@@ -4,6 +4,7 @@
 import { miner } from './miner.js';
 import { subsetSumSolver } from './subset-sum.js';
 import { miningValidator } from './validation.js';
+import { mobileMiningFixes } from './mobile-mining-fixes.js';
 import { api } from '../core/api.js';
 import { deviceUtils, numberUtils, dateUtils, domUtils, storageUtils, clipboardUtils } from '../shared/utils.js';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '../shared/constants.js';
@@ -111,6 +112,12 @@ class MiningInterface {
                 miner.setWallet(this.wallet);
             }
             
+            // Initialize mobile fixes if on mobile
+            if (deviceUtils.isMobile()) {
+                this.addLogEntry('info', 'Mobile optimizations enabled');
+                this.showMobileMiningTips();
+            }
+            
             this.isInitialized = true;
             this.addLogEntry('success', 'Mining interface initialized successfully');
             
@@ -127,13 +134,28 @@ class MiningInterface {
         try {
             this.addLogEntry('info', 'Creating new wallet...');
             
+            // Try to ensure cryptographic libraries are loaded
+            await this.ensureCryptographicSupport();
+            
             // Check if Ed25519 library is available
             if (!window.nobleEd25519 && window.ed25519Fallback !== 'webcrypto') {
-                throw new Error('Ed25519 library not available');
+                this.addLogEntry('warning', 'Cryptographic libraries not available, retrying...');
+                
+                // Try to load libraries again
+                await this.loadCryptographicLibraries();
+                
+                if (!window.nobleEd25519 && window.ed25519Fallback !== 'webcrypto') {
+                    throw new Error('Ed25519 library not available. Please refresh the page and try again.');
+                }
             }
 
             // Generate wallet
             const wallet = await this.generateWallet();
+            
+            // Verify wallet is not demo
+            if (wallet.type === 'demo') {
+                throw new Error('Only demo wallets available. Please ensure cryptographic libraries are loaded.');
+            }
             
             // Save wallet
             storageUtils.save('mining_wallet', wallet);
@@ -141,12 +163,54 @@ class MiningInterface {
             // Set wallet
             this.setWallet(wallet);
             
-            this.addLogEntry('success', 'New wallet created successfully');
+            this.addLogEntry('success', 'Real wallet created successfully');
             
         } catch (error) {
             console.error('Failed to create wallet:', error);
             this.addLogEntry('error', `Wallet creation failed: ${error.message}`);
         }
+    }
+
+    /**
+     * Ensure cryptographic support is available
+     */
+    async ensureCryptographicSupport() {
+        // Check if we already have support
+        if (window.nobleEd25519 || (window.crypto && window.crypto.subtle)) {
+            return true;
+        }
+        
+        // Try to load mobile mining fixes which includes cryptographic support
+        if (window.mobileMiningFixes && typeof window.mobileMiningFixes.ensureCryptographicSupport === 'function') {
+            return await window.mobileMiningFixes.ensureCryptographicSupport();
+        }
+        
+        return false;
+    }
+
+    /**
+     * Load cryptographic libraries
+     */
+    async loadCryptographicLibraries() {
+        // Try to load the Ed25519 library from CDN
+        return new Promise((resolve) => {
+            if (window.nobleEd25519) {
+                resolve(true);
+                return;
+            }
+            
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/@noble/ed25519@1.7.3/dist/index.js';
+            script.onload = () => {
+                console.log('Ed25519 library loaded successfully');
+                resolve(true);
+            };
+            script.onerror = () => {
+                console.warn('Failed to load Ed25519 library from CDN');
+                resolve(false);
+            };
+            document.head.appendChild(script);
+        });
     }
 
     /**
@@ -622,6 +686,24 @@ class MiningInterface {
         
         this.maxAttemptsInput.value = settings.maxAttempts;
         this.autoMiningCheckbox.checked = settings.autoMining;
+    }
+
+    /**
+     * Show mobile mining tips
+     */
+    showMobileMiningTips() {
+        // Mobile tips are now handled by the mobile-mining-fixes module
+        // This method is kept for backward compatibility
+        const mobileStats = mobileMiningFixes.getMobileMiningStats();
+        this.addLogEntry('info', `Mobile device detected: ${mobileStats.deviceType}`);
+        
+        if (mobileStats.batteryLevel !== null) {
+            mobileStats.batteryLevel.then(level => {
+                if (level < 0.2) {
+                    this.addLogEntry('warning', 'Battery level is low. Consider plugging in your device for optimal mining performance.');
+                }
+            });
+        }
     }
 }
 
