@@ -294,6 +294,167 @@ assets/                     # Diagrams and assets
 - [📖 Documentation](https://github.com/beanapologist/COINjecture/tree/main/docs)
 - [🔧 Development Setup](https://github.com/beanapologist/COINjecture/blob/main/ARCHITECTURE.README.md)
 
+## 🔍 AUDIT AND REFACTORING pt1
+
+### Architecture Diagrams
+
+**v4.0.0 Refactor:** COINjecture has undergone a comprehensive security audit and architectural refactor. Below are the current system architecture diagrams that show how the components interact.
+
+#### Core Module Dependencies
+
+```mermaid
+graph TD
+  CLI[cli.py] --> Node[node.py]
+  Node --> Consensus[consensus.py]
+  Node --> Network[network.py]
+  Node --> Storage[storage.py]
+  Consensus --> CoreBlockchain[src/core/blockchain.py]
+  Consensus --> Metrics[src/metrics_engine.py]
+  Metrics --> Tokenomics[src/tokenomics/*]
+  API[src/api/faucet_server_cors_fixed.py] --> Storage
+  API --> Metrics
+  Storage --> IPFS[(IPFS HTTP API)]
+  Storage --> SQLite[(SQLite DB)]
+  Network --> P2P[p2p_discovery.py/libp2p_host.py]
+  CoreBlockchain --> Proofs[pow.py]
+  Proofs --> UserSubs[user_submissions/*]
+```
+
+#### Detailed Component Flow
+
+```mermaid
+graph TD
+    A[CLI: src/cli.py] --> B[Node: src/node.py]
+    B --> C[Consensus: src/consensus.py]
+    B --> D[PoW: src/pow.py]
+    B --> E[Storage: src/storage.py]
+    B --> F[Network: src/network.py]
+    B --> G[User Submissions: src/user_submissions/*]
+    C --> D
+    C --> E
+    C --> H[Metrics: src/metrics_engine.py]
+    D --> I[Core Blockchain: src/core/blockchain.py]
+    E --> I
+    E --> J[IPFS Client]
+    F --> K[libp2p Host: src/network/libp2p_host.py]
+    F --> L[P2P Discovery: src/p2p_discovery.py]
+    G --> C
+    M[API: src/api/* e.g., faucet_server.py] --> E
+    M --> I
+    N[Unified Consensus Service: src/unified_consensus_service.py] --> C
+    N --> E
+    N --> H
+    O[Web Frontend: web/js/*] --> M
+    O --> F
+    P[Tests: tests/*] --> B
+    P --> C
+    P --> F
+
+    subgraph "External"
+        J
+        K
+    end
+
+    style A fill:#f9f,stroke:#333
+    style O fill:#bbf,stroke:#333
+    style P fill:#bfb,stroke:#333
+```
+
+#### Complete System Architecture
+
+```mermaid
+graph TB
+    subgraph "Client Layer"
+        CLI[CLI<br/>cli.py]
+        WEB[Web Frontend<br/>S3/CloudFront]
+    end
+
+    subgraph "Node Layer"
+        NODE[Node<br/>node.py]
+        CONSENSUS[Consensus Engine<br/>consensus.py]
+        POW[PoW System<br/>pow.py]
+        STORAGE[Storage Manager<br/>storage.py]
+        NETWORK[Network Protocol<br/>network.py]
+    end
+
+    subgraph "Core Logic"
+        BLOCKCHAIN[Blockchain Core<br/>core/blockchain.py]
+        TOKENOMICS[Tokenomics<br/>tokenomics/]
+        SUBMISSIONS[User Submissions<br/>user_submissions/]
+        METRICS[Metrics Engine<br/>metrics_engine.py]
+    end
+
+    subgraph "API Layer"
+        FAUCET[Faucet API<br/>faucet_server_cors_fixed.py]
+        AUTH[Authentication<br/>auth.py]
+        SCHEMA[Schemas<br/>schema.py]
+        CACHE[Cache Manager<br/>cache_manager.py]
+    end
+
+    subgraph "External Services"
+        IPFS[IPFS Node<br/>localhost:5001]
+        PINATA[Pinata<br/>Public Pinning]
+        PEERS[Bootstrap Peers<br/>167.172.213.70:5000]
+    end
+
+    subgraph "Data Layer"
+        SQLITE[SQLite DB<br/>blockchain.db]
+        CACHE_FILES[Cache Files<br/>data/cache/]
+        IPFS_DATA[IPFS Data<br/>ipfs_data/]
+    end
+
+    CLI --> NODE
+    WEB --> FAUCET
+
+    NODE --> CONSENSUS
+    NODE --> POW
+    NODE --> STORAGE
+    NODE --> NETWORK
+    NODE --> SUBMISSIONS
+
+    CONSENSUS --> BLOCKCHAIN
+    POW --> BLOCKCHAIN
+    STORAGE --> IPFS
+    STORAGE --> SQLITE
+    NETWORK --> PEERS
+
+    BLOCKCHAIN --> TOKENOMICS
+    BLOCKCHAIN --> METRICS
+
+    FAUCET --> AUTH
+    FAUCET --> SCHEMA
+    FAUCET --> CACHE
+    FAUCET --> CACHE_FILES
+
+    STORAGE --> PINATA
+    IPFS --> IPFS_DATA
+
+    SUBMISSIONS --> POW
+    SUBMISSIONS --> BLOCKCHAIN
+```
+
+### v4.0.0 Refactor Highlights
+
+**New Architecture Package:** `src/coinjecture/`
+- ✅ **Canonical Type System** - Frozen dataclasses with immutability guarantees
+- ✅ **Deterministic Codec** - msgspec-based serialization for consensus safety
+- ✅ **Proof-of-Work Interface** - Abstract solver with pluggable backends
+- ✅ **Resource Limits** - Tier-based DoS prevention (5 hardware tiers)
+
+**Security & Quality:**
+- 🔒 **10 Security Findings** documented with fixes (3x P0, 3x P1, 4x P2)
+- ✅ **CI/CD Pipeline** - Black, Ruff, mypy, pytest, Bandit, CodeQL
+- ✅ **Golden Vector Tests** - Consensus stability protection
+- ✅ **Pre-commit Hooks** - Automated quality gates
+
+**Documentation:**
+- 📄 [SECURITY_AUDIT.md](SECURITY_AUDIT.md) - Complete security analysis
+- 📄 [REFACTOR_PLAN.md](REFACTOR_PLAN.md) - Migration strategy & architecture
+
+**Zero Breaking Changes** - All existing functionality preserved with backward-compatible shim imports.
+
+---
+
 ## Contributing
 
 We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
