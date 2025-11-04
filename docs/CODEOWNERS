@@ -1,0 +1,47 @@
+# COINjecture Code Owners
+#
+# These users will be automatically requested for review when PRs modify these paths.
+# Changes to consensus-critical code require explicit approval.
+#
+# Format: path @github_username
+
+# ==================== CONSENSUS-CRITICAL (REQUIRE APPROVAL) ====================
+
+# Rust core - ALL consensus logic
+/rust/coinjecture-core/ @Quigles1337
+/rust/coinjecture-core/src/types.rs @Quigles1337
+/rust/coinjecture-core/src/codec.rs @Quigles1337
+/rust/coinjecture-core/src/hash.rs @Quigles1337
+/rust/coinjecture-core/src/merkle.rs @Quigles1337
+/rust/coinjecture-core/src/commitment.rs @Quigles1337
+/rust/coinjecture-core/src/verify.rs @Quigles1337
+
+# Golden vectors - FROZEN (requires labeled PR: golden-vector-change)
+/rust/coinjecture-core/golden/ @Quigles1337
+/rust/coinjecture-core/tests/golden_tests.rs @Quigles1337
+
+# Python consensus shims
+/python/src/coinjecture/consensus/ @Quigles1337
+/python/src/coinjecture/legacy_compat.py @Quigles1337
+
+# ==================== OPERATIONAL (REVIEW RECOMMENDED) ====================
+
+# Go daemon
+/go/ @Quigles1337
+
+# CI/CD pipelines
+/.github/workflows/ @Quigles1337
+
+# Documentation
+/docs/ @Quigles1337
+/REFACTOR_ARCHITECTURE.md @Quigles1337
+/README_REFACTOR.md @Quigles1337
+
+# ==================== CONFIGURATION ====================
+
+# Security policies
+/SECURITY.md @Quigles1337
+/.github/workflows/security.yml @Quigles1337
+
+# Default fallback
+* @Quigles1337
