@@ -44,17 +44,20 @@ pub fn encode_json<T: Serialize>(value: &T) -> Result<String> {
 
 /// Decode from msgpack with STRICT validation
 pub fn decode_msgpack<T: DeserializeOwned>(bytes: &[u8]) -> Result<T> {
-    // Strict decode: deny unknown fields
-    let mut deserializer = rmp_serde::Deserializer::new(bytes);
+    // Strict decode: deny unknown fields using Cursor for position tracking
+    use std::io::Cursor;
+    let mut cursor = Cursor::new(bytes);
+    let mut deserializer = rmp_serde::Deserializer::new(&mut cursor);
 
     let value: T = serde::Deserialize::deserialize(&mut deserializer)
         .map_err(|e| ConsensusError::CodecError(e.to_string()))?;
 
     // Ensure ALL bytes were consumed (no trailing data)
-    if deserializer.position() != bytes.len() {
+    let position = cursor.position() as usize;
+    if position != bytes.len() {
         return Err(ConsensusError::CodecError(format!(
             "Trailing data: consumed {} of {} bytes",
-            deserializer.position(),
+            position,
             bytes.len()
         )));
     }

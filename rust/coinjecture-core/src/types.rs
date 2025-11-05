@@ -5,7 +5,6 @@
 //! Serialization is CANONICAL - msgpack and JSON must produce identical hashes.
 
 use serde::{Deserialize, Serialize};
-use std::fmt;
 
 /// Codec version for forward/backward compatibility
 pub const CODEC_VERSION: u8 = 1;
@@ -118,6 +117,7 @@ impl ProblemType {
 
 /// Block header - consensus-critical, deterministic hash
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 #[repr(C)]
 pub struct BlockHeader {
     /// Codec version for compatibility (MUST BE FIRST FIELD)
@@ -152,7 +152,7 @@ pub struct BlockHeader {
     pub nonce: u64,
 
     /// Extra data (max 256 bytes, for future use)
-    #[serde(with = "serde_bytes")]
+    #[serde(with = "serde_bytes_vec")]
     pub extra_data: Vec<u8>,
 }
 
@@ -177,6 +177,7 @@ impl Default for BlockHeader {
 
 /// Commitment for commit-reveal protocol (anti-grinding)
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 #[repr(C)]
 pub struct Commitment {
     /// Epoch salt (from parent_hash || block_index)
@@ -200,6 +201,7 @@ pub struct Commitment {
 
 /// Computational problem for PoW
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 #[repr(C)]
 pub struct Problem {
     /// Problem type
@@ -222,6 +224,7 @@ pub struct Problem {
 
 /// Solution to a computational problem
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 #[repr(C)]
 pub struct Solution {
     /// Indices into problem.elements that form the solution
@@ -235,6 +238,7 @@ pub struct Solution {
 
 /// Reveal phase data (unveils commitment)
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 #[repr(C)]
 pub struct Reveal {
     /// The problem that was committed to
@@ -264,6 +268,7 @@ pub enum TxType {
 
 /// Transaction - state transition
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 #[repr(C)]
 pub struct Transaction {
     /// Codec version
@@ -297,7 +302,7 @@ pub struct Transaction {
     pub signature: [u8; 64],
 
     /// Transaction data (problem submission, etc.)
-    #[serde(with = "serde_bytes")]
+    #[serde(with = "serde_bytes_vec")]
     pub data: Vec<u8>,
 
     /// Timestamp
@@ -326,6 +331,7 @@ impl Default for Transaction {
 
 /// Complete block (header + transactions + reveal)
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 #[repr(C)]
 pub struct Block {
     /// Block header
@@ -345,6 +351,7 @@ pub struct Block {
 
 /// Budget limits for proof verification (defense against DoS)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 #[repr(C)]
 pub struct VerifyBudget {
     /// Maximum operations allowed (e.g., subset combinations to check)
@@ -383,6 +390,7 @@ impl VerifyBudget {
 
 /// Merkle proof for transaction inclusion
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 #[repr(C)]
 pub struct MerkleProof {
     /// Transaction index in block
@@ -399,6 +407,7 @@ pub struct MerkleProof {
 
 /// IPFS pin manifest for CID audit
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 #[repr(C)]
 pub struct PinManifest {
     /// CID
@@ -427,7 +436,7 @@ pub struct PinManifest {
 
 // ==================== HELPER MODULES ====================
 
-/// Serde helper for byte arrays
+/// Serde helper for byte arrays (fixed size)
 mod serde_bytes {
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
@@ -438,7 +447,7 @@ mod serde_bytes {
         if serializer.is_human_readable() {
             hex::encode(bytes).serialize(serializer)
         } else {
-            bytes.serialize(serializer)
+            serializer.serialize_bytes(bytes)
         }
     }
 
@@ -460,7 +469,46 @@ mod serde_bytes {
             arr.copy_from_slice(&bytes);
             Ok(arr)
         } else {
-            <[u8; N]>::deserialize(deserializer)
+            // For msgpack, deserialize as slice then convert to array
+            let vec = Vec::<u8>::deserialize(deserializer)?;
+            if vec.len() != N {
+                return Err(serde::de::Error::custom(format!(
+                    "Expected {} bytes, got {}",
+                    N,
+                    vec.len()
+                )));
+            }
+            let mut arr = [0u8; N];
+            arr.copy_from_slice(&vec);
+            Ok(arr)
+        }
+    }
+}
+
+/// Serde helper for byte vectors (variable size)
+mod serde_bytes_vec {
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+    pub fn serialize<S>(bytes: &Vec<u8>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        if serializer.is_human_readable() {
+            hex::encode(bytes).serialize(serializer)
+        } else {
+            bytes.serialize(serializer)
+        }
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        if deserializer.is_human_readable() {
+            let s = String::deserialize(deserializer)?;
+            hex::decode(&s).map_err(serde::de::Error::custom)
+        } else {
+            Vec::<u8>::deserialize(deserializer)
         }
     }
 }

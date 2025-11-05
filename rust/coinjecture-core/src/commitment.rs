@@ -6,7 +6,7 @@
 
 use crate::codec::{compute_problem_hash, compute_solution_hash};
 use crate::errors::{ConsensusError, Result};
-use crate::hash::{compute_epoch_salt, sha256, sha256_multi};
+use crate::hash::{compute_epoch_salt, sha256_multi};
 use crate::types::{Commitment, Problem, Reveal, Solution};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
