@@ -43,13 +43,13 @@ The COINjecture REST API provides programmatic access to:
 ```mermaid
 sequenceDiagram
     participant Client
-    participant API[API Gateway<br/>Port 8080]
-    participant RateLimit[Rate Limiter]
-    participant Auth[Auth Middleware]
-    participant Handler[Request Handler]
-    participant Core[Consensus Core]
+    participant API as API Gateway (Port 8080)
+    participant RateLimit as Rate Limiter
+    participant Auth as Auth Middleware
+    participant Handler as Request Handler
+    participant Core as Consensus Core
 
-    Client->>API: HTTP Request<br/>GET /api/v1/blocks/12345
+    Client->>API: HTTP Request: GET /api/v1/blocks/12345
     API->>RateLimit: Check Rate Limit
 
     alt Rate Limit Exceeded
@@ -68,7 +68,7 @@ sequenceDiagram
         end
     end
 
-    Note over Client,Core: All responses include<br/>X-RateLimit-* headers
+    Note over Client,Core: All responses include X-RateLimit-* headers
 ```
 
 ---
