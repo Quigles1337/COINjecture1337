@@ -196,6 +196,12 @@ pub enum ConsensusError {
     #[error("Inflation detected: total supply exceeded")]
     InflationDetected,
 
+    #[error("Invalid parameter '{param}': {reason}")]
+    InvalidParameter { param: String, reason: String },
+
+    #[error("Invalid state transition: cannot transition from {from} to {to}")]
+    InvalidStateTransition { from: String, to: String },
+
     // ==================== GENERAL ERRORS ====================
     #[error("Invalid input: {0}")]
     InvalidInput(String),
@@ -276,6 +282,8 @@ impl ConsensusError {
             Self::GasLimitTooLow { .. } => "E9006",
             Self::StateRootMismatch { .. } => "E9007",
             Self::InflationDetected => "E9008",
+            Self::InvalidParameter { .. } => "E9009",
+            Self::InvalidStateTransition { .. } => "E9010",
 
             // General: 0xxx
             Self::InvalidInput(_) => "E0001",

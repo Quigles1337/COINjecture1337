@@ -42,6 +42,7 @@
 pub mod codec;
 pub mod commitment;
 pub mod errors;
+pub mod escrow;
 pub mod hash;
 pub mod merkle;
 pub mod transaction;
@@ -59,9 +60,9 @@ pub mod ffi;
 // Re-exports for convenience
 pub use errors::{ConsensusError, Result};
 pub use types::{
-    Block, BlockHeader, Commitment, HardwareTier, MerkleProof, PinManifest, Problem, ProblemType,
-    Reveal, Solution, Transaction, TxType, VerifyBudget, CODEC_VERSION, MAX_BLOCK_SIZE,
-    MAX_PROOF_ELEMENTS, MAX_TX_PER_BLOCK,
+    Block, BlockHeader, BountyEscrow, Commitment, EscrowState, HardwareTier, MerkleProof,
+    PinManifest, Problem, ProblemType, Reveal, Solution, Transaction, TxType, VerifyBudget,
+    CODEC_VERSION, MAX_BLOCK_SIZE, MAX_PROOF_ELEMENTS, MAX_TX_PER_BLOCK,
 };
 
 /// Library version (matches Cargo.toml)

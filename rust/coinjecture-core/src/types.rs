@@ -327,6 +327,73 @@ impl Default for Transaction {
     }
 }
 
+// ==================== ESCROW ====================
+
+/// Escrow state for bounty payments
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[repr(u8)]
+pub enum EscrowState {
+    Locked = 0,    // Escrow is active, awaiting solution
+    Released = 1,  // Escrow paid to solver
+    Refunded = 2,  // Escrow refunded to submitter (expired)
+}
+
+impl EscrowState {
+    pub fn from_u8(value: u8) -> Option<Self> {
+        match value {
+            0 => Some(Self::Locked),
+            1 => Some(Self::Released),
+            2 => Some(Self::Refunded),
+            _ => None,
+        }
+    }
+
+    pub fn is_settled(&self) -> bool {
+        matches!(self, Self::Released | Self::Refunded)
+    }
+}
+
+/// Bounty escrow for problem submissions (Layer 1 escrow)
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[repr(C)]
+pub struct BountyEscrow {
+    /// Escrow ID (deterministic: hash of submitter || problem_hash || created_block)
+    #[serde(with = "serde_bytes")]
+    pub id: [u8; 32],
+
+    /// Submitter address (Ed25519 public key)
+    #[serde(with = "serde_bytes")]
+    pub submitter: [u8; 32],
+
+    /// Locked amount in wei
+    pub amount: u64,
+
+    /// Problem hash (identifies which problem this bounty is for)
+    #[serde(with = "serde_bytes")]
+    pub problem_hash: [u8; 32],
+
+    /// Block at which escrow was created
+    pub created_block: u64,
+
+    /// Block at which escrow expires (refund becomes available)
+    pub expiry_block: u64,
+
+    /// Current escrow state
+    pub state: EscrowState,
+
+    /// Recipient address (solver who claimed bounty, None if unreleased)
+    #[serde(with = "serde_option_bytes")]
+    pub recipient: Option<[u8; 32]>,
+
+    /// Block at which escrow was settled (released or refunded)
+    pub settled_block: Option<u64>,
+
+    /// Settlement transaction hash
+    #[serde(with = "serde_option_bytes")]
+    pub settlement_tx: Option<[u8; 32]>,
+}
+
 // ==================== BLOCK ====================
 
 /// Complete block (header + transactions + reveal)
@@ -509,6 +576,76 @@ mod serde_bytes_vec {
             hex::decode(&s).map_err(serde::de::Error::custom)
         } else {
             Vec::<u8>::deserialize(deserializer)
+        }
+    }
+}
+
+/// Serde helper for optional byte arrays (Option<[u8; N]>)
+mod serde_option_bytes {
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+    pub fn serialize<S, const N: usize>(
+        bytes: &Option<[u8; N]>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match bytes {
+            Some(b) => {
+                if serializer.is_human_readable() {
+                    Some(hex::encode(b)).serialize(serializer)
+                } else {
+                    Some(b.as_slice()).serialize(serializer)
+                }
+            }
+            None => serializer.serialize_none(),
+        }
+    }
+
+    pub fn deserialize<'de, D, const N: usize>(
+        deserializer: D,
+    ) -> Result<Option<[u8; N]>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        if deserializer.is_human_readable() {
+            // JSON format: Option<String> (hex-encoded or null)
+            let opt: Option<String> = Option::deserialize(deserializer)?;
+            match opt {
+                Some(s) => {
+                    let bytes = hex::decode(&s).map_err(serde::de::Error::custom)?;
+                    if bytes.len() != N {
+                        return Err(serde::de::Error::custom(format!(
+                            "Expected {} bytes, got {}",
+                            N,
+                            bytes.len()
+                        )));
+                    }
+                    let mut arr = [0u8; N];
+                    arr.copy_from_slice(&bytes);
+                    Ok(Some(arr))
+                }
+                None => Ok(None),
+            }
+        } else {
+            // Msgpack format: Option<Vec<u8>>
+            let opt: Option<Vec<u8>> = Option::deserialize(deserializer)?;
+            match opt {
+                Some(bytes) => {
+                    if bytes.len() != N {
+                        return Err(serde::de::Error::custom(format!(
+                            "Expected {} bytes, got {}",
+                            N,
+                            bytes.len()
+                        )));
+                    }
+                    let mut arr = [0u8; N];
+                    arr.copy_from_slice(&bytes);
+                    Ok(Some(arr))
+                }
+                None => Ok(None),
+            }
         }
     }
 }
