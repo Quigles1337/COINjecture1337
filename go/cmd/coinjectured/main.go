@@ -14,6 +14,8 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"os"
@@ -21,15 +23,16 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Quigles1337/COINjecture1337-REFACTOR/go/internal/logger"
 	"github.com/Quigles1337/COINjecture1337-REFACTOR/go/pkg/api"
 	"github.com/Quigles1337/COINjecture1337-REFACTOR/go/pkg/config"
+	"github.com/Quigles1337/COINjecture1337-REFACTOR/go/pkg/consensus"
 	"github.com/Quigles1337/COINjecture1337-REFACTOR/go/pkg/ipfs"
 	"github.com/Quigles1337/COINjecture1337-REFACTOR/go/pkg/limiter"
 	"github.com/Quigles1337/COINjecture1337-REFACTOR/go/pkg/mempool"
 	"github.com/Quigles1337/COINjecture1337-REFACTOR/go/pkg/metrics"
 	"github.com/Quigles1337/COINjecture1337-REFACTOR/go/pkg/p2p"
 	"github.com/Quigles1337/COINjecture1337-REFACTOR/go/pkg/state"
-	"github.com/Quigles1337/COINjecture1337-REFACTOR/go/internal/logger"
 
 	"github.com/spf13/cobra"
 )
@@ -145,7 +148,84 @@ func runDaemon(cmd *cobra.Command, args []string) {
 	defer p2pManager.Stop()
 	log.Info("P2P network started")
 
-	// 7. API server
+	// 7. Consensus engine (PoA)
+	var consensusEngine *consensus.Engine
+	if cfg.Consensus.Enabled {
+		// Parse validator addresses
+		validators := make([][32]byte, len(cfg.Consensus.Validators))
+		for i, validatorHex := range cfg.Consensus.Validators {
+			if len(validatorHex) != 64 {
+				log.WithField("validator", validatorHex).Fatal("Invalid validator address length")
+			}
+			bytes, err := hex.DecodeString(validatorHex)
+			if err != nil {
+				log.WithError(err).Fatal("Failed to decode validator address")
+			}
+			copy(validators[i][:], bytes)
+		}
+
+		// Parse validator key (or generate random if empty)
+		var validatorKey [32]byte
+		if cfg.Consensus.ValidatorKey == "" {
+			// Generate random validator key for single-node testing
+			rand.Read(validatorKey[:])
+			log.WithField("validator_key", hex.EncodeToString(validatorKey[:])).Warn("Generated random validator key (for testing only!)")
+		} else {
+			if len(cfg.Consensus.ValidatorKey) != 64 {
+				log.Fatal("Invalid validator key length")
+			}
+			bytes, err := hex.DecodeString(cfg.Consensus.ValidatorKey)
+			if err != nil {
+				log.WithError(err).Fatal("Failed to decode validator key")
+			}
+			copy(validatorKey[:], bytes)
+		}
+
+		// If no validators specified, use our key as the only validator
+		if len(validators) == 0 {
+			validators = [][32]byte{validatorKey}
+			log.Info("Single validator mode (this node is the only validator)")
+		}
+
+		// Create consensus config
+		consensusCfg := consensus.ConsensusConfig{
+			BlockTime:    cfg.Consensus.BlockTime,
+			Validators:   validators,
+			ValidatorKey: validatorKey,
+			IsValidator:  true, // Always true in single-node or configured validator
+		}
+
+		// Initialize consensus engine
+		consensusEngine = consensus.NewEngine(consensusCfg, mp, stateManager, log)
+
+		// Set block callback for P2P broadcasting
+		consensusEngine.SetNewBlockCallback(func(block *consensus.Block) {
+			log.WithFields(logger.Fields{
+				"block_number": block.BlockNumber,
+				"block_hash":   fmt.Sprintf("%x", block.BlockHash[:8]),
+				"tx_count":     len(block.Transactions),
+			}).Info("New block produced, broadcasting to network")
+
+			// TODO: Broadcast block via P2P
+			// p2pManager.BroadcastBlock(block)
+		})
+
+		// Start consensus engine
+		if err := consensusEngine.Start(); err != nil {
+			log.WithError(err).Fatal("Failed to start consensus engine")
+		}
+		defer consensusEngine.Stop()
+
+		log.WithFields(logger.Fields{
+			"block_time":     consensusCfg.BlockTime,
+			"validators":     len(consensusCfg.Validators),
+			"validator_key":  fmt.Sprintf("%x", validatorKey[:8]),
+		}).Info("Consensus engine started")
+	} else {
+		log.Warn("Consensus engine disabled - no blocks will be produced")
+	}
+
+	// 8. API server
 	apiServer := api.NewServer(cfg.API, rateLimiter, ipfsClient, p2pManager, mp, stateManager, log)
 	go func() {
 		log.WithField("port", cfg.API.Port).Info("Starting API server")

@@ -13,6 +13,7 @@ type Config struct {
 	API         APIConfig         `mapstructure:"api"`
 	P2P         P2PConfig         `mapstructure:"p2p"`
 	IPFS        IPFSConfig        `mapstructure:"ipfs"`
+	Consensus   ConsensusConfig   `mapstructure:"consensus"`
 	RateLimiter RateLimiterConfig `mapstructure:"rate_limiter"`
 	Metrics     MetricsConfig     `mapstructure:"metrics"`
 	Features    FeaturesConfig    `mapstructure:"features"`
@@ -48,6 +49,15 @@ type IPFSConfig struct {
 	AuditInterval     time.Duration `mapstructure:"audit_interval"`
 	EnableManifests   bool          `mapstructure:"enable_manifests"`
 	ColdStorageMirror string        `mapstructure:"cold_storage_mirror"`
+}
+
+// ConsensusConfig for PoA consensus engine
+type ConsensusConfig struct {
+	Enabled          bool          `mapstructure:"enabled"`
+	BlockTime        time.Duration `mapstructure:"block_time"`
+	Validators       []string      `mapstructure:"validators"`        // Hex-encoded validator addresses
+	ValidatorKey     string        `mapstructure:"validator_key"`     // This node's validator key (hex)
+	GenesisTimestamp int64         `mapstructure:"genesis_timestamp"` // Genesis block timestamp (0 = now)
 }
 
 // RateLimiterConfig for request rate limiting
@@ -106,6 +116,13 @@ func DefaultConfig() *Config {
 			AuditInterval:     6 * time.Hour,
 			EnableManifests:   true,
 			ColdStorageMirror: "",
+		},
+		Consensus: ConsensusConfig{
+			Enabled:          true,
+			BlockTime:        2 * time.Second,
+			Validators:       []string{},        // Empty = single validator mode
+			ValidatorKey:     "",                // Empty = generate random key
+			GenesisTimestamp: 0,                 // 0 = use current time
 		},
 		RateLimiter: RateLimiterConfig{
 			Enabled:         true,
