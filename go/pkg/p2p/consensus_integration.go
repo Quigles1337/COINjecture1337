@@ -2,8 +2,11 @@
 package p2p
 
 import (
+	"encoding/json"
+
 	"github.com/Quigles1337/COINjecture1337-REFACTOR/go/pkg/consensus"
 	"github.com/Quigles1337/COINjecture1337-REFACTOR/go/pkg/mempool"
+	"github.com/Quigles1337/COINjecture1337-REFACTOR/go/pkg/state"
 )
 
 // BlockToP2PMessage converts a consensus.Block to a p2p.BlockMessage
@@ -69,4 +72,28 @@ func P2PMessageToBlock(msg *BlockMessage) *consensus.Block {
 		// GasLimit and GasUsed are not transmitted (can be recomputed)
 		// ExtraData is not transmitted (not critical)
 	}
+}
+
+// StoredBlockToP2PMessage converts a state.StoredBlock to a p2p.BlockMessage
+func StoredBlockToP2PMessage(stored *state.StoredBlock) (*BlockMessage, error) {
+	// Deserialize transactions from JSON
+	var txs []TransactionInBlock
+	if len(stored.TxData) > 0 {
+		if err := json.Unmarshal(stored.TxData, &txs); err != nil {
+			return nil, err
+		}
+	}
+
+	return &BlockMessage{
+		BlockNumber:  stored.BlockNumber,
+		ParentHash:   stored.ParentHash,
+		StateRoot:    stored.StateRoot,
+		TxRoot:       stored.TxRoot,
+		Timestamp:    stored.Timestamp,
+		Miner:        stored.Validator,
+		Difficulty:   stored.Difficulty,
+		Nonce:        stored.Nonce,
+		Transactions: txs,
+		BlockHash:    stored.BlockHash,
+	}, nil
 }

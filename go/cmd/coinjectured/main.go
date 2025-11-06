@@ -226,6 +226,45 @@ func runDaemon(cmd *cobra.Command, args []string) {
 			return nil
 		})
 
+		// Set P2P block sync handler to serve historical blocks
+		p2pManager.SetBlockSyncHandler(func(fromBlock, toBlock uint64, maxBlocks int) ([]p2p.BlockMessage, error) {
+			log.WithFields(logger.Fields{
+				"from_block": fromBlock,
+				"to_block":   toBlock,
+				"max_blocks": maxBlocks,
+			}).Info("Serving block sync request")
+
+			// Clamp to max_blocks limit
+			if toBlock-fromBlock+1 > uint64(maxBlocks) {
+				toBlock = fromBlock + uint64(maxBlocks) - 1
+			}
+
+			// Fetch blocks from state manager
+			storedBlocks, err := stateManager.GetBlockRange(fromBlock, toBlock)
+			if err != nil {
+				return nil, fmt.Errorf("failed to fetch blocks: %w", err)
+			}
+
+			// Convert to P2P messages
+			blocks := make([]p2p.BlockMessage, 0, len(storedBlocks))
+			for _, stored := range storedBlocks {
+				blockMsg, err := p2p.StoredBlockToP2PMessage(stored)
+				if err != nil {
+					log.WithError(err).WithField("block_number", stored.BlockNumber).Warn("Failed to convert stored block")
+					continue
+				}
+				blocks = append(blocks, *blockMsg)
+			}
+
+			log.WithFields(logger.Fields{
+				"blocks_sent": len(blocks),
+				"from_block":  fromBlock,
+				"to_block":    toBlock,
+			}).Info("Block sync response prepared")
+
+			return blocks, nil
+		})
+
 		// Start consensus engine
 		if err := consensusEngine.Start(); err != nil {
 			log.WithError(err).Fatal("Failed to start consensus engine")

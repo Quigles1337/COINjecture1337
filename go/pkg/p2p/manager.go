@@ -202,6 +202,13 @@ func (m *Manager) SetConsensusBlockHandler(handler func(*BlockMessage) error) {
 	m.onConsensusBlock = handler
 }
 
+// SetBlockSyncHandler sets the callback for block sync requests
+func (m *Manager) SetBlockSyncHandler(handler func(fromBlock, toBlock uint64, maxBlocks int) ([]BlockMessage, error)) {
+	if m.blockGossip != nil {
+		m.blockGossip.SetBlockSyncHandler(handler)
+	}
+}
+
 // AnnounceCID announces a CID to the network (equilibrium gossip)
 func (m *Manager) AnnounceCID(cid string, cidType string, blockNumber uint64) {
 	if m.cidGossip == nil {

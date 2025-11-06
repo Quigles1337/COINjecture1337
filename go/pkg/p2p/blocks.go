@@ -38,6 +38,7 @@ type BlockGossip struct {
 
 	// Block handlers (callbacks)
 	onBlockReceived func(block *BlockMessage) error
+	onBlockSyncRequest func(fromBlock, toBlock uint64, maxBlocks int) ([]BlockMessage, error)
 	mu              sync.RWMutex
 
 	// Shutdown
@@ -206,6 +207,13 @@ func (bg *BlockGossip) BroadcastBlock(block *BlockMessage) error {
 	return nil
 }
 
+// SetBlockSyncHandler sets the callback for handling block sync requests
+func (bg *BlockGossip) SetBlockSyncHandler(handler func(fromBlock, toBlock uint64, maxBlocks int) ([]BlockMessage, error)) {
+	bg.mu.Lock()
+	defer bg.mu.Unlock()
+	bg.onBlockSyncRequest = handler
+}
+
 // handleBlockSyncRequest handles incoming block sync requests
 func (bg *BlockGossip) handleBlockSyncRequest(stream network.Stream) {
 	defer stream.Close()
@@ -224,10 +232,29 @@ func (bg *BlockGossip) handleBlockSyncRequest(stream network.Stream) {
 		"peer":       stream.Conn().RemotePeer().String(),
 	}).Info("Block sync request received")
 
-	// TODO: Fetch blocks from local storage
-	// For now, return empty response
+	// Fetch blocks via callback
+	bg.mu.RLock()
+	handler := bg.onBlockSyncRequest
+	bg.mu.RUnlock()
+
+	var blocks []BlockMessage
+	if handler != nil {
+		fetchedBlocks, err := handler(req.FromBlock, req.ToBlock, req.MaxBlocks)
+		if err != nil {
+			bg.log.WithError(err).Error("Failed to fetch blocks for sync")
+			// Return empty response on error
+			blocks = []BlockMessage{}
+		} else {
+			blocks = fetchedBlocks
+			bg.log.WithField("blocks_count", len(blocks)).Info("Blocks fetched for sync response")
+		}
+	} else {
+		bg.log.Warn("No block sync handler configured")
+		blocks = []BlockMessage{}
+	}
+
 	resp := BlockSyncResponse{
-		Blocks: []BlockMessage{},
+		Blocks: blocks,
 	}
 
 	// Send response
