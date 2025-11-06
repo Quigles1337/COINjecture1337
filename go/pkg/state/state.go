@@ -329,6 +329,100 @@ func (sm *StateManager) updateAccountTx(tx *sql.Tx, address [32]byte, balance, n
 	return nil
 }
 
+// ==================== STATE ROLLBACK & REPLAY ====================
+
+// ClearAccountState clears all account state (for chain reorganization)
+func (sm *StateManager) ClearAccountState() error {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
+	_, err := sm.db.Exec("DELETE FROM accounts")
+	if err != nil {
+		return fmt.Errorf("failed to clear accounts: %w", err)
+	}
+
+	sm.log.Warn("Account state cleared for chain reorganization")
+	return nil
+}
+
+// ClearEscrowState clears all escrow state (for chain reorganization)
+func (sm *StateManager) ClearEscrowState() error {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
+	_, err := sm.db.Exec("DELETE FROM escrows")
+	if err != nil {
+		return fmt.Errorf("failed to clear escrows: %w", err)
+	}
+
+	sm.log.Warn("Escrow state cleared for chain reorganization")
+	return nil
+}
+
+// GetAccountSnapshot returns a snapshot of all accounts
+func (sm *StateManager) GetAccountSnapshot() (map[[32]byte]*Account, error) {
+	sm.mu.RLock()
+	defer sm.mu.RUnlock()
+
+	snapshot := make(map[[32]byte]*Account)
+
+	rows, err := sm.db.Query(`
+		SELECT address, balance, nonce, created_at, updated_at
+		FROM accounts
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query accounts: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var addressHex string
+		var account Account
+		var createdAtUnix, updatedAtUnix int64
+
+		if err := rows.Scan(&addressHex, &account.Balance, &account.Nonce, &createdAtUnix, &updatedAtUnix); err != nil {
+			return nil, fmt.Errorf("failed to scan account: %w", err)
+		}
+
+		var address [32]byte
+		fmt.Sscanf(addressHex, "%x", &address)
+		account.Address = address
+		account.CreatedAt = time.Unix(createdAtUnix, 0)
+		account.UpdatedAt = time.Unix(updatedAtUnix, 0)
+
+		snapshot[address] = &account
+	}
+
+	return snapshot, nil
+}
+
+// RestoreAccountSnapshot restores accounts from a snapshot
+func (sm *StateManager) RestoreAccountSnapshot(snapshot map[[32]byte]*Account) error {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+
+	// Clear existing state
+	if _, err := sm.db.Exec("DELETE FROM accounts"); err != nil {
+		return fmt.Errorf("failed to clear accounts: %w", err)
+	}
+
+	// Restore snapshot
+	for _, account := range snapshot {
+		addressHex := fmt.Sprintf("%x", account.Address)
+		_, err := sm.db.Exec(`
+			INSERT INTO accounts (address, balance, nonce, created_at, updated_at)
+			VALUES (?, ?, ?, ?, ?)
+		`, addressHex, account.Balance, account.Nonce, account.CreatedAt.Unix(), account.UpdatedAt.Unix())
+
+		if err != nil {
+			return fmt.Errorf("failed to restore account: %w", err)
+		}
+	}
+
+	sm.log.WithField("accounts_restored", len(snapshot)).Info("Account snapshot restored")
+	return nil
+}
+
 // ==================== ESCROW STATE ====================
 
 // GetEscrow retrieves an escrow by ID

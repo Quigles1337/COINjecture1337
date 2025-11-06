@@ -273,7 +273,7 @@ func (e *Engine) ProcessBlock(block *Block) error {
 	return nil
 }
 
-// handleChainReorganization handles switching to a new canonical chain
+// handleChainReorganization handles switching to a new canonical chain with state rollback
 func (e *Engine) handleChainReorganization(oldTip *Block, newTip *Block) error {
 	e.log.WithFields(logger.Fields{
 		"old_height": oldTip.BlockNumber,
@@ -282,21 +282,66 @@ func (e *Engine) handleChainReorganization(oldTip *Block, newTip *Block) error {
 		"new_hash":   fmt.Sprintf("%x", newTip.BlockHash[:8]),
 	}).Warn("Chain reorganization triggered")
 
-	// For now, simple approach: if new chain is longer, accept it
-	// TODO: Implement full state rollback and reapply
-	// This requires:
-	// 1. Find common ancestor
-	// 2. Rollback state to ancestor
-	// 3. Replay blocks from new chain
+	// Step 1: Find common ancestor
+	commonAncestor, reorgDepth, err := e.findCommonAncestor(oldTip, newTip)
+	if err != nil {
+		return fmt.Errorf("failed to find common ancestor: %w", err)
+	}
 
-	// Update current block and height
+	e.log.WithFields(logger.Fields{
+		"ancestor_height": commonAncestor.BlockNumber,
+		"ancestor_hash":   fmt.Sprintf("%x", commonAncestor.BlockHash[:8]),
+		"reorg_depth":     reorgDepth,
+	}).Info("Found common ancestor for reorg")
+
+	// Step 2: Take state snapshot (for rollback if reorg fails)
+	snapshot, err := e.stateManager.GetAccountSnapshot()
+	if err != nil {
+		return fmt.Errorf("failed to create state snapshot: %w", err)
+	}
+
+	e.log.WithField("accounts_snapshotted", len(snapshot)).Debug("State snapshot created")
+
+	// Step 3: Get path from common ancestor to new tip
+	reorgPath, err := e.forkChoice.GetChainPath(commonAncestor.BlockHash, newTip.BlockHash)
+	if err != nil {
+		return fmt.Errorf("failed to get reorg path: %w", err)
+	}
+
+	e.log.WithField("blocks_to_replay", len(reorgPath)).Info("Calculated reorg path")
+
+	// Step 4: Rollback state to common ancestor
+	if err := e.rollbackStateToBlock(commonAncestor); err != nil {
+		// Try to restore snapshot
+		e.log.WithError(err).Error("State rollback failed, restoring snapshot")
+		if restoreErr := e.stateManager.RestoreAccountSnapshot(snapshot); restoreErr != nil {
+			return fmt.Errorf("rollback failed and snapshot restore failed: %w (original: %v)", restoreErr, err)
+		}
+		return fmt.Errorf("state rollback failed: %w", err)
+	}
+
+	// Step 5: Replay blocks from reorg path
+	for i, block := range reorgPath {
+		e.log.WithFields(logger.Fields{
+			"block_number": block.BlockNumber,
+			"block_hash":   fmt.Sprintf("%x", block.BlockHash[:8]),
+			"progress":     fmt.Sprintf("%d/%d", i+1, len(reorgPath)),
+		}).Info("Replaying block")
+
+		// Apply block to state
+		if _, err := e.builder.ApplyBlock(block); err != nil {
+			// Rollback failed, restore snapshot
+			e.log.WithError(err).Error("Block replay failed, restoring snapshot")
+			if restoreErr := e.stateManager.RestoreAccountSnapshot(snapshot); restoreErr != nil {
+				return fmt.Errorf("block replay failed and snapshot restore failed: %w (original: %v)", restoreErr, err)
+			}
+			return fmt.Errorf("failed to replay block %d: %w", block.BlockNumber, err)
+		}
+	}
+
+	// Step 6: Update chain state
 	e.currentBlock = newTip
 	e.blockHeight = newTip.BlockNumber
-
-	reorgDepth := int(oldTip.BlockNumber) - int(newTip.BlockNumber)
-	if reorgDepth < 0 {
-		reorgDepth = -reorgDepth
-	}
 
 	// Trigger reorg callback if set
 	if e.onReorg != nil {
@@ -304,11 +349,103 @@ func (e *Engine) handleChainReorganization(oldTip *Block, newTip *Block) error {
 	}
 
 	e.log.WithFields(logger.Fields{
-		"new_height": newTip.BlockNumber,
-		"new_hash":   fmt.Sprintf("%x", newTip.BlockHash[:8]),
+		"new_height":  newTip.BlockNumber,
+		"new_hash":    fmt.Sprintf("%x", newTip.BlockHash[:8]),
 		"reorg_depth": reorgDepth,
+		"blocks_replayed": len(reorgPath),
 	}).Info("Chain reorganization complete")
 
+	return nil
+}
+
+// findCommonAncestor finds the common ancestor between two blocks
+func (e *Engine) findCommonAncestor(block1, block2 *Block) (*Block, int, error) {
+	// Build chain from block1 back to genesis
+	chain1 := make(map[[32]byte]*Block)
+	current := block1
+	for current != nil {
+		chain1[current.BlockHash] = current
+		if current.BlockNumber == 0 {
+			break // Genesis
+		}
+		// Try to get parent from fork choice cache
+		parent, exists := e.forkChoice.GetBlock(current.ParentHash)
+		if !exists {
+			break
+		}
+		current = parent
+	}
+
+	// Walk back from block2 until we find a block in chain1
+	current = block2
+	depth := 0
+	for current != nil {
+		if ancestor, exists := chain1[current.BlockHash]; exists {
+			return ancestor, depth, nil
+		}
+		depth++
+		if current.BlockNumber == 0 {
+			// Reached genesis without finding common ancestor
+			return current, depth, nil
+		}
+		parent, exists := e.forkChoice.GetBlock(current.ParentHash)
+		if !exists {
+			break
+		}
+		current = parent
+	}
+
+	return nil, 0, fmt.Errorf("no common ancestor found")
+}
+
+// rollbackStateToBlock rolls back state by replaying from genesis to target block
+func (e *Engine) rollbackStateToBlock(targetBlock *Block) error {
+	e.log.WithFields(logger.Fields{
+		"target_height": targetBlock.BlockNumber,
+		"target_hash":   fmt.Sprintf("%x", targetBlock.BlockHash[:8]),
+	}).Info("Rolling back state")
+
+	// Clear account state
+	if err := e.stateManager.ClearAccountState(); err != nil {
+		return fmt.Errorf("failed to clear account state: %w", err)
+	}
+
+	// Clear escrow state
+	if err := e.stateManager.ClearEscrowState(); err != nil {
+		return fmt.Errorf("failed to clear escrow state: %w", err)
+	}
+
+	// If target is genesis (block 0), we're done
+	if targetBlock.BlockNumber == 0 {
+		e.log.Info("Rolled back to genesis block")
+		return nil
+	}
+
+	// Build chain from genesis to target
+	chain := []*Block{}
+	current := targetBlock
+	for current.BlockNumber > 0 {
+		chain = append([]*Block{current}, chain...) // Prepend
+		parent, exists := e.forkChoice.GetBlock(current.ParentHash)
+		if !exists {
+			return fmt.Errorf("missing parent block %x", current.ParentHash[:8])
+		}
+		current = parent
+	}
+
+	// Replay blocks from genesis to target
+	for i, block := range chain {
+		e.log.WithFields(logger.Fields{
+			"block_number": block.BlockNumber,
+			"progress":     fmt.Sprintf("%d/%d", i+1, len(chain)),
+		}).Debug("Replaying block for state rollback")
+
+		if _, err := e.builder.ApplyBlock(block); err != nil {
+			return fmt.Errorf("failed to replay block %d: %w", block.BlockNumber, err)
+		}
+	}
+
+	e.log.WithField("blocks_replayed", len(chain)).Info("State rollback complete")
 	return nil
 }
 
