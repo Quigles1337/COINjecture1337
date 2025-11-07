@@ -1,3 +1,5 @@
+//go:build rust_ffi
+
 package bindings
 
 import (

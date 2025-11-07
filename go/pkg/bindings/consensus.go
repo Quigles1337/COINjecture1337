@@ -1,3 +1,5 @@
+//go:build rust_ffi
+
 // Go bindings for Rust consensus validation (FFI)
 package bindings
 

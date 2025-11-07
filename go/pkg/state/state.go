@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/Quigles1337/COINjecture1337-REFACTOR/go/internal/logger"
-	_ "github.com/mattn/go-sqlite3" // SQLite driver
+	_ "modernc.org/sqlite" // Pure-Go SQLite driver (no CGO required)
 )
 
 // Account represents an account state
@@ -52,7 +52,7 @@ type StateManager struct {
 
 // NewStateManager creates a new state manager
 func NewStateManager(dbPath string, log *logger.Logger) (*StateManager, error) {
-	db, err := sql.Open("sqlite3", dbPath)
+	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
