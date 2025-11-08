@@ -1,0 +1,13 @@
+[package]
+name = "coinject-rpc"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+coinject-core = { path = "../core" }
+jsonrpsee.workspace = true
+tokio.workspace = true
+serde_json.workspace = true

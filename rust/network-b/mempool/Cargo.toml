@@ -1,0 +1,11 @@
+[package]
+name = "coinject-mempool"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+coinject-core = { path = "../core" }
+tokio.workspace = true

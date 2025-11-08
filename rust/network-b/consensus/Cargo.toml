@@ -1,0 +1,13 @@
+[package]
+name = "coinject-consensus"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+coinject-core = { path = "../core" }
+serde.workspace = true
+thiserror.workspace = true
+chrono.workspace = true
